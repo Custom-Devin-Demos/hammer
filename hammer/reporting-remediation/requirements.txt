@@ -12,3 +12,11 @@ slackclient
 watchtower
 xlrd
 xlwt
+azure-identity
+azure-mgmt-storage
+azure-mgmt-network
+azure-mgmt-compute
+google-auth
+google-cloud-storage
+google-cloud-compute
+google-cloud-iam

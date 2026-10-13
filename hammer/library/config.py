@@ -9,6 +9,7 @@ import requests
 
 from functools import lru_cache
 from datetime import datetime, timedelta, timezone
+from library.cloud import CloudProvider
 
 
 class Config(object):
@@ -65,6 +66,43 @@ class Config(object):
 
         # AMI public access issue config
         self.publicAMIs = ModuleConfig(self._config, "ec2_public_ami")
+
+        credentials_table = self._config["credentials"]["ddb.table_name"]
+        # Azure configuration (service principal credentials are loaded from DDB on first use)
+        self.azure = AzureConfig(self._config,
+                                 credentials_loader=lambda: self.json_load_from_ddb(credentials_table,
+                                                                                    self.aws.region,
+                                                                                    "azure"))
+        # GCP configuration (service account key is loaded from DDB on first use)
+        self.gcp = GCPConfig(self._config,
+                             credentials_loader=lambda: self.json_load_from_ddb(credentials_table,
+                                                                                self.aws.region,
+                                                                                "gcp"))
+
+        # Azure storage account public access issue config
+        self.azureStoragePublic = ModuleConfig(self._config, "azure_storage_public_access",
+                                               provider=CloudProvider.AZURE)
+        # Azure NSG unrestricted access issue config
+        self.azureNsg = UnrestrictedAccessConfig(self._config, "azure_nsg_unrestricted_access",
+                                                 provider=CloudProvider.AZURE)
+        # Azure unencrypted managed disks issue config
+        self.azureDisk = AzureDiskEncryptionConfig(self._config, "azure_disk_unencrypted",
+                                                   provider=CloudProvider.AZURE)
+        # Azure storage account keys rotation issue config
+        self.azureStorageKeys = KeysRotationConfig(self._config, "azure_storage_keys_rotation",
+                                                   provider=CloudProvider.AZURE)
+        # GCP bucket public access issue config
+        self.gcpBucketPublic = GCPBucketPublicAccessConfig(self._config, "gcp_bucket_public_access",
+                                                           provider=CloudProvider.GCP)
+        # GCP firewall unrestricted access issue config
+        self.gcpFirewall = UnrestrictedAccessConfig(self._config, "gcp_firewall_unrestricted_access",
+                                                    provider=CloudProvider.GCP)
+        # GCP unencrypted disks issue config
+        self.gcpDisk = ModuleConfig(self._config, "gcp_disk_unencrypted",
+                                    provider=CloudProvider.GCP)
+        # GCP service account keys rotation issue config
+        self.gcpServiceAccountKeys = KeysRotationConfig(self._config, "gcp_sa_keys_rotation",
+                                                        provider=CloudProvider.GCP)
 
         self.bu_list = self._config.get("bu_list", [])
         self.whitelisting_procedure_url = self._config.get("whitelisting_procedure_url", None)
@@ -454,14 +492,94 @@ class AWSConfig(BaseConfig):
         return self._config["ddb_backup"].get("enabled", True)
 
 
+class CloudProviderConfig(object):
+    """
+    Base class for non-AWS provider configuration sections (`azure`, `gcp`) in config.json.
+    Section is optional: when it is absent provider has no accounts and is disabled.
+    Credentials are never stored in config.json, they are loaded lazily from the credentials DDB table.
+    """
+    provider = None
+
+    def __init__(self, config, credentials_loader=None, credentials=None):
+        """
+        :param config: whole config.json content (dict)
+        :param credentials_loader: callable returning credentials dict (called once, on first access to `credentials`)
+        :param credentials: credentials dict (takes precedence over `credentials_loader`)
+        """
+        self.section = self.provider.value
+        self.present = isinstance(config.get(self.section), dict)
+        self._config = config.get(self.section) or {}
+        self._credentials_loader = credentials_loader
+        self._credentials = credentials
+
+    def __getattr__(self, key):
+        """ Search for any attribute in config, if not found - raise exception """
+        if key.startswith("_"):
+            raise AttributeError(key)
+        if key in self._config:
+            return self._config[key]
+        raise AttributeError(f"section '{self.section}' has no option '{key}'")
+
+    @property
+    def accounts(self):
+        """ :return: dict with provider accounts {'account id': 'account name', ...} """
+        return self._config.get("accounts", {}) or {}
+
+    @property
+    def enabled(self):
+        """ :return: boolean, if section is present and not explicitly disabled """
+        return self.present and self._config.get("enabled", True)
+
+    @property
+    def credentials(self):
+        """ :return: dict with provider credentials from DDB (empty dict if not available) """
+        if self._credentials is None:
+            credentials = self._credentials_loader() if (self._credentials_loader and self.present) else {}
+            self._credentials = credentials or {}
+        return self._credentials
+
+
+class AzureConfig(CloudProviderConfig):
+    """
+    Represents `azure` configuration part in config.json:
+    `accounts` - {subscription_id: name}.
+    `credentials` - service principal {"tenant_id", "client_id", "client_secret"} from DDB (`azure` service key).
+    """
+    provider = CloudProvider.AZURE
+
+
+class GCPConfig(CloudProviderConfig):
+    """
+    Represents `gcp` configuration part in config.json:
+    `accounts` - {project_id: name}.
+    `credentials` - service account JSON key dict from DDB (`gcp` service key).
+    """
+    provider = CloudProvider.GCP
+
+
 class ModuleConfig(BaseConfig):
-    """ Base class for module configuration """
-    def __init__(self, config, section):
-        super().__init__(config, section)
+    """
+    Base class for module configuration.
+
+    :param provider: cloud provider of the module (`CloudProvider` or its value - "aws", "azure", "gcp").
+                     Accounts are resolved from `config[provider]["accounts"]`.
+                     For non-AWS modules missing module/provider sections are tolerated (module is disabled).
+    """
+    def __init__(self, config, section, provider=CloudProvider.AWS):
+        self.provider = CloudProvider(provider)
+        if self.provider == CloudProvider.AWS:
+            super().__init__(config, section)
+            self._provider_enabled = True
+        else:
+            self.section = section
+            self._section_present = isinstance(config.get(section), dict)
+            self._config = config.get(section) or {}
+            provider_config = config.get(self.provider.value)
+            self._provider_enabled = isinstance(provider_config, dict) and provider_config.get("enabled", True)
         self._whitelist = config["whitelist"].get(section, {})
         self._fixnow = config["fixnow"].get(section, {})
         # main accounts dict
-        self._accounts = config["aws"]["accounts"]
+        self._accounts = (config.get(self.provider.value) or {}).get("accounts", {}) or {}
         self.name = section
 
     def module_accounts(self, option):
@@ -502,6 +620,8 @@ class ModuleConfig(BaseConfig):
     @property
     def enabled(self):
         """ :return: boolean, if security issue check should be performed """
+        if self.provider != CloudProvider.AWS and not (self._section_present and self._provider_enabled):
+            return False
         return self._config.get("enabled", True)
 
     def in_fixnow(self, account_id, issue):
@@ -534,11 +654,15 @@ class ModuleConfig(BaseConfig):
     @property
     def reporting(self):
         """ :return: boolean, if reporting for issue should be enabled """
+        if self.provider != CloudProvider.AWS and not self.enabled:
+            return False
         return self._config.get("reporting", False)
 
     @property
     def remediation(self):
         """ :return: boolean, if remediation for issue should be enabled """
+        if self.provider != CloudProvider.AWS and not self.enabled:
+            return False
         return self._config.get("remediation", False)
 
     @property
@@ -566,3 +690,35 @@ class IAMUserKeysRotationConfig(ModuleConfig):
     def rotation_criteria_days(self):
         """ :return: `timedelta` object to compare and mark access keys as stale (created long time ago) """
         return timedelta(days=int(self._config["rotation_criteria_days"]))
+
+
+class KeysRotationConfig(ModuleConfig):
+    """ Extend ModuleConfig with keys rotation details (Azure storage account keys, GCP service account keys) """
+    @property
+    def rotation_criteria_days(self):
+        """ :return: `timedelta` object to compare and mark keys as stale (created long time ago) """
+        return timedelta(days=int(self._config.get("rotation_criteria_days", 90)))
+
+
+class UnrestrictedAccessConfig(ModuleConfig):
+    """ Extend ModuleConfig with network unrestricted access details (Azure NSG, GCP firewall) """
+    @property
+    def restricted_ports(self):
+        """ :return: list with ports which must not be open to the world """
+        return self._config.get("restricted_ports", [])
+
+
+class AzureDiskEncryptionConfig(ModuleConfig):
+    """ Extend ModuleConfig with Azure managed disks encryption details """
+    @property
+    def require_customer_managed_key(self):
+        """ :return: boolean, if only customer-managed key encryption is acceptable (ADE is not enough) """
+        return bool(self._config.get("require_customer_managed_key", False))
+
+
+class GCPBucketPublicAccessConfig(ModuleConfig):
+    """ Extend ModuleConfig with GCP bucket public access details """
+    @property
+    def enforce_public_access_prevention(self):
+        """ :return: boolean, if remediation should set `public_access_prevention` to `enforced` """
+        return bool(self._config.get("enforce_public_access_prevention", False))

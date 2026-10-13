@@ -9,6 +9,9 @@ from library.aws.utility import AssumeRole
 from library.config import Config
 from library.ddb_issues import Operations as IssueOperations
 from library.ddb_issues import SecurityGroupIssue, S3AclIssue, S3PolicyIssue, CloudTrailIssue, IAMKeyRotationIssue, IAMKeyInactiveIssue, RdsPublicSnapshotIssue, EBSUnencryptedVolumeIssue, EBSPublicSnapshotIssue, SQSPolicyIssue
+from library.ddb_issues import AzureStoragePublicAccessIssue, AzureNSGIssue, AzureUnencryptedDiskIssue, AzureStorageKeyRotationIssue
+from library.ddb_issues import GCPBucketPublicAccessIssue, GCPFirewallIssue, GCPUnencryptedDiskIssue, GCPServiceAccountKeyIssue
+from library.cloud import CloudProvider
 from analytics.add_excel_sheet_records import AddRecordsToSheet
 from library.slack_utility import SlackNotification
 from library.aws.s3 import S3Operations
@@ -19,12 +22,12 @@ class CSVReport(object):
     def __init__(self):
         self.config = Config()
 
-    def add_open_issues_to_sheet(self, ddb_table, work_book, sheet_name, issue_class):
+    def add_open_issues_to_sheet(self, ddb_table, work_book, sheet_name, issue_class, module_config):
         worksheet = work_book.add_sheet(sheet_name)
         # Adding Headers to Execl sheet with DynamoDB table field names.
         AddRecordsToSheet.add_header_data(worksheet, sheet_name)
         row_number = 0
-        for account_id, account_name in self.config.aws.accounts.items():
+        for account_id, account_name in module_config.accounts.items():
             issues = IssueOperations.get_account_open_issues(ddb_table, account_id, issue_class)
 
             for issue in issues:
@@ -41,12 +44,12 @@ class CSVReport(object):
                    (not self.config.slack.enabled):
                     IssueOperations.set_status_reported(ddb_table, issue)
 
-    def add_closed_issues_to_sheet(self, ddb_table, work_book, sheet_name, issue_class):
+    def add_closed_issues_to_sheet(self, ddb_table, work_book, sheet_name, issue_class, module_config):
         worksheet = work_book.add_sheet(sheet_name)
         # Adding Headers to Execl sheet with DynamoDB table field names.
         AddRecordsToSheet.add_header_data(worksheet, sheet_name)
         row_number = 0
-        for account_id, account_name in self.config.aws.accounts.items():
+        for account_id, account_name in module_config.accounts.items():
             issues = IssueOperations.get_account_closed_issues(ddb_table, account_id, issue_class)
 
             for issue in issues:
@@ -60,26 +63,37 @@ class CSVReport(object):
     def generate(self):
         main_account_session = AssumeRole.get_session(region=self.config.aws.region)
         issues = [
-            (self.config.sg.ddb_table_name, "Insecure Services", SecurityGroupIssue),
-            (self.config.s3acl.ddb_table_name, "S3 ACL Public Access", S3AclIssue),
-            (self.config.s3policy.ddb_table_name, "S3 Policy Public Access", S3PolicyIssue),
-            (self.config.iamUserInactiveKeys.ddb_table_name, "IAM User Inactive Keys", IAMKeyInactiveIssue),
-            (self.config.iamUserKeysRotation.ddb_table_name, "IAM User Key Rotation", IAMKeyRotationIssue),
-            (self.config.ebsVolume.ddb_table_name, "EBS Unencrypted Volumes", EBSUnencryptedVolumeIssue),
-            (self.config.ebsSnapshot.ddb_table_name, "EBS Public Snapshots", EBSPublicSnapshotIssue),
-            (self.config.cloudtrails.ddb_table_name, "CloudTrail Logging Issues", CloudTrailIssue),
-            (self.config.rdsSnapshot.ddb_table_name, "RDS Public Snapshots", RdsPublicSnapshotIssue),
-            (self.config.sqspolicy.ddb_table_name, "SQS Policy Public Access", SQSPolicyIssue),
+            (self.config.sg, "Insecure Services", SecurityGroupIssue),
+            (self.config.s3acl, "S3 ACL Public Access", S3AclIssue),
+            (self.config.s3policy, "S3 Policy Public Access", S3PolicyIssue),
+            (self.config.iamUserInactiveKeys, "IAM User Inactive Keys", IAMKeyInactiveIssue),
+            (self.config.iamUserKeysRotation, "IAM User Key Rotation", IAMKeyRotationIssue),
+            (self.config.ebsVolume, "EBS Unencrypted Volumes", EBSUnencryptedVolumeIssue),
+            (self.config.ebsSnapshot, "EBS Public Snapshots", EBSPublicSnapshotIssue),
+            (self.config.cloudtrails, "CloudTrail Logging Issues", CloudTrailIssue),
+            (self.config.rdsSnapshot, "RDS Public Snapshots", RdsPublicSnapshotIssue),
+            (self.config.sqspolicy, "SQS Policy Public Access", SQSPolicyIssue),
+            (self.config.azureStoragePublic, "Azure Storage Public Access", AzureStoragePublicAccessIssue),
+            (self.config.azureNsg, "Azure NSG Unrestricted Access", AzureNSGIssue),
+            (self.config.azureDisk, "Azure Unencrypted Disks", AzureUnencryptedDiskIssue),
+            (self.config.azureStorageKeys, "Azure Storage Keys Rotation", AzureStorageKeyRotationIssue),
+            (self.config.gcpBucketPublic, "GCP Bucket Public Access", GCPBucketPublicAccessIssue),
+            (self.config.gcpFirewall, "GCP Firewall Unrestricted", GCPFirewallIssue),
+            (self.config.gcpDisk, "GCP Unencrypted Disks", GCPUnencryptedDiskIssue),
+            (self.config.gcpServiceAccountKeys, "GCP SA Keys Rotation", GCPServiceAccountKeyIssue),
         ]
 
         open_security_issues_workbook = xlwt.Workbook()
         closed_security_issues_workbook = xlwt.Workbook()
 
-        for table_name, sheet_name, issueType in issues:
+        for module_config, sheet_name, issueType in issues:
+            # Azure/GCP modules are optional, skip disabled ones (their DDB tables may be absent)
+            if module_config.provider != CloudProvider.AWS and not module_config.enabled:
+                continue
             logging.debug(f"Building {issueType.__name__} report")
-            ddb_table = main_account_session.resource("dynamodb").Table(table_name)
-            self.add_open_issues_to_sheet(ddb_table, open_security_issues_workbook, sheet_name, issueType)
-            self.add_closed_issues_to_sheet(ddb_table, closed_security_issues_workbook, sheet_name, issueType)
+            ddb_table = main_account_session.resource("dynamodb").Table(module_config.ddb_table_name)
+            self.add_open_issues_to_sheet(ddb_table, open_security_issues_workbook, sheet_name, issueType, module_config)
+            self.add_closed_issues_to_sheet(ddb_table, closed_security_issues_workbook, sheet_name, issueType, module_config)
 
         timestamp = datetime.now(timezone.utc).isoformat('T', 'seconds')
 

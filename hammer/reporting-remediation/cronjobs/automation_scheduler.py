@@ -31,6 +31,8 @@ def automation_cronjob(config):
     remediation_schedule = config.cronjobs["remediation"]
     csv_reporting_schedule = config.csv.schedule
 
+    python = config.cronjobs.get("python", "python3.6")
+
     logging.debug("Adding hammer crontab tasks")
 
     reporting_jobs = CronJobs("hammer-reporting")
@@ -40,7 +42,7 @@ def automation_cronjob(config):
         logging.debug(f"Adding CSV reporting with '{csv_reporting_schedule}' schedule")
         reporting_jobs.add(
             schedule=csv_reporting_schedule,
-            command='cd /hammer-correlation-engine && python3.6 -m analytics.security_issues_csv_report'
+            command=f'cd /hammer-correlation-engine && {python} -m analytics.security_issues_csv_report'
         )
 
     modules = [
@@ -57,6 +59,14 @@ def automation_cronjob(config):
         ("SQS Public Access",         config.sqspolicy,           "create_sqs_policy_issue_tickets",          "clean_sqs_policy_permissions"),
         ("S3 Unencrypted Buckets",    config.s3Encrypt,           "create_s3_unencrypted_bucket_issue_tickets", "clean_s3bucket_unencrypted"),
         ("RDS Unencrypted Instances", config.rdsEncrypt,          "create_rds_unencrypted_instance_issue_tickets", None),
+        ("Azure Storage Public Access",     config.azureStoragePublic,    "create_azure_storage_public_access_issue_tickets", "clean_azure_storage_public_access"),
+        ("Azure NSG Unrestricted Access",   config.azureNsg,              "create_azure_nsg_issue_tickets",                   "clean_azure_nsg_issues"),
+        ("Azure Unencrypted Disks",         config.azureDisk,             "create_azure_unencrypted_disk_issue_tickets",      None),
+        ("Azure Storage Keys Rotation",     config.azureStorageKeys,      "create_azure_storage_keys_rotation_issue_tickets", "clean_azure_storage_keys_rotation"),
+        ("GCP Bucket Public Access",        config.gcpBucketPublic,       "create_gcp_bucket_public_access_issue_tickets",    "clean_gcp_bucket_public_access"),
+        ("GCP Firewall Unrestricted Access", config.gcpFirewall,          "create_gcp_firewall_issue_tickets",                "clean_gcp_firewall_issues"),
+        ("GCP Unencrypted Disks",           config.gcpDisk,               "create_gcp_unencrypted_disk_issue_tickets",        None),
+        ("GCP Service Account Keys Rotation", config.gcpServiceAccountKeys, "create_gcp_sa_keys_rotation_issue_tickets",     "clean_gcp_sa_keys_rotation"),
     ]
 
     for title, module_config, reporting_script, remediation_script in modules:
@@ -64,14 +74,14 @@ def automation_cronjob(config):
             logging.debug(f"Adding {title} reporting with '{reporting_schedule}' schedule")
             reporting_jobs.add(
                 schedule=reporting_schedule,
-                command=f'cd /hammer-correlation-engine && python3.6 -m reporting.{reporting_script}',
+                command=f'cd /hammer-correlation-engine && {python} -m reporting.{reporting_script}',
             )
 
         if module_config.remediation and remediation_script is not None:
             logging.debug(f"Adding {title} remediation with '{remediation_schedule}' schedule")
             remediation_jobs.add(
                 schedule=remediation_schedule,
-                command=f'cd /hammer-correlation-engine && python3.6 -m remediation.{remediation_script} --batch',
+                command=f'cd /hammer-correlation-engine && {python} -m remediation.{remediation_script} --batch',
             )
 
     reporting_jobs.save()

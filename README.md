@@ -23,10 +23,22 @@ Dow Jones Hammer documentation is available via GitHub Pages at [https://dowjone
 * [S3 Unencrypted Buckets](https://dowjones.github.io/hammer/playbook11_s3_unencryption.html)
 * [RDS Unencrypted Instances](https://dowjones.github.io/hammer/playbook12_rds_unencryption.html)
 * [AMIs Public Access](https://dowjones.github.io/hammer/playbook13_amis_public_access.html)
+* [Azure Storage Public Access](docs/pages/playbook14_azure_storage_public_access.md)
+* [Azure NSG Unrestricted Access](docs/pages/playbook15_azure_nsg_unrestricted_access.md)
+* [Azure Unencrypted Disks](docs/pages/playbook16_azure_unencrypted_disks.md)
+* [Azure Storage Keys Rotation](docs/pages/playbook17_azure_storage_keys_rotation.md)
+* [GCP Bucket Public Access](docs/pages/playbook18_gcp_bucket_public_access.md)
+* [GCP Firewall Unrestricted Access](docs/pages/playbook19_gcp_firewall_unrestricted_access.md)
+* [GCP Unencrypted Disks](docs/pages/playbook20_gcp_unencrypted_disks.md)
+* [GCP Service Account Keys Rotation](docs/pages/playbook21_gcp_sa_keys_rotation.md)
+
+Azure subscriptions and GCP projects are checked from the same AWS control plane, see the [multi-cloud overview](docs/pages/multicloud_overview.md).
 
 ## Technologies
-* Python 3.6
+* Python 3.6 (Python 3.9 for Azure/GCP modules)
 * AWS (Lambda, Dynamodb, EC2, SNS, CloudWatch, CloudFormation)
+* Microsoft Azure (Storage, Network, Compute; azure-identity and azure-mgmt SDKs)
+* Google Cloud Platform (Cloud Storage, Compute Engine, IAM; google-cloud SDKs)
 * Terraform
 * JIRA
 * Slack

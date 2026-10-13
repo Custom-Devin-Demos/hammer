@@ -96,3 +96,51 @@ resource "aws_s3_bucket_object" "rds-unencrypted-instance-identification" {
     key    = "lambda/${format("rds-unencrypted-instance-identification-%s.zip", "${md5(file("${path.module}/../../../packages/rds-unencrypted-instance-identification.zip"))}")}"
     source = "${path.module}/../../../packages/rds-unencrypted-instance-identification.zip"
 }
+
+resource "aws_s3_bucket_object" "azure-storage-public-access-identification" {
+    bucket = "${var.s3bucket}"
+    key    = "lambda/${format("azure-storage-public-access-identification-%s.zip", "${md5(file("${path.module}/../../../packages/azure-storage-public-access-identification.zip"))}")}"
+    source = "${path.module}/../../../packages/azure-storage-public-access-identification.zip"
+}
+
+resource "aws_s3_bucket_object" "azure-nsg-issues-identification" {
+    bucket = "${var.s3bucket}"
+    key    = "lambda/${format("azure-nsg-issues-identification-%s.zip", "${md5(file("${path.module}/../../../packages/azure-nsg-issues-identification.zip"))}")}"
+    source = "${path.module}/../../../packages/azure-nsg-issues-identification.zip"
+}
+
+resource "aws_s3_bucket_object" "azure-disk-unencrypted-identification" {
+    bucket = "${var.s3bucket}"
+    key    = "lambda/${format("azure-disk-unencrypted-identification-%s.zip", "${md5(file("${path.module}/../../../packages/azure-disk-unencrypted-identification.zip"))}")}"
+    source = "${path.module}/../../../packages/azure-disk-unencrypted-identification.zip"
+}
+
+resource "aws_s3_bucket_object" "azure-storage-keys-rotation-identification" {
+    bucket = "${var.s3bucket}"
+    key    = "lambda/${format("azure-storage-keys-rotation-identification-%s.zip", "${md5(file("${path.module}/../../../packages/azure-storage-keys-rotation-identification.zip"))}")}"
+    source = "${path.module}/../../../packages/azure-storage-keys-rotation-identification.zip"
+}
+
+resource "aws_s3_bucket_object" "gcp-bucket-public-access-identification" {
+    bucket = "${var.s3bucket}"
+    key    = "lambda/${format("gcp-bucket-public-access-identification-%s.zip", "${md5(file("${path.module}/../../../packages/gcp-bucket-public-access-identification.zip"))}")}"
+    source = "${path.module}/../../../packages/gcp-bucket-public-access-identification.zip"
+}
+
+resource "aws_s3_bucket_object" "gcp-firewall-issues-identification" {
+    bucket = "${var.s3bucket}"
+    key    = "lambda/${format("gcp-firewall-issues-identification-%s.zip", "${md5(file("${path.module}/../../../packages/gcp-firewall-issues-identification.zip"))}")}"
+    source = "${path.module}/../../../packages/gcp-firewall-issues-identification.zip"
+}
+
+resource "aws_s3_bucket_object" "gcp-disk-unencrypted-identification" {
+    bucket = "${var.s3bucket}"
+    key    = "lambda/${format("gcp-disk-unencrypted-identification-%s.zip", "${md5(file("${path.module}/../../../packages/gcp-disk-unencrypted-identification.zip"))}")}"
+    source = "${path.module}/../../../packages/gcp-disk-unencrypted-identification.zip"
+}
+
+resource "aws_s3_bucket_object" "gcp-sa-keys-rotation-identification" {
+    bucket = "${var.s3bucket}"
+    key    = "lambda/${format("gcp-sa-keys-rotation-identification-%s.zip", "${md5(file("${path.module}/../../../packages/gcp-sa-keys-rotation-identification.zip"))}")}"
+    source = "${path.module}/../../../packages/gcp-sa-keys-rotation-identification.zip"
+}

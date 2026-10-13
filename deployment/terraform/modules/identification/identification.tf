@@ -16,7 +16,15 @@ resource "aws_cloudformation_stack" "identification" {
                   "aws_s3_bucket_object.ami-public-access-issues-identification",
                   "aws_s3_bucket_object.sqs-public-policy-identification",
                   "aws_s3_bucket_object.s3-unencrypted-bucket-issues-identification",
-                  "aws_s3_bucket_object.rds-unencrypted-instance-identification"
+                  "aws_s3_bucket_object.rds-unencrypted-instance-identification",
+                  "aws_s3_bucket_object.azure-storage-public-access-identification",
+                  "aws_s3_bucket_object.azure-nsg-issues-identification",
+                  "aws_s3_bucket_object.azure-disk-unencrypted-identification",
+                  "aws_s3_bucket_object.azure-storage-keys-rotation-identification",
+                  "aws_s3_bucket_object.gcp-bucket-public-access-identification",
+                  "aws_s3_bucket_object.gcp-firewall-issues-identification",
+                  "aws_s3_bucket_object.gcp-disk-unencrypted-identification",
+                  "aws_s3_bucket_object.gcp-sa-keys-rotation-identification"
                  ]
 
     tags = "${var.tags}"
@@ -44,6 +52,15 @@ resource "aws_cloudformation_stack" "identification" {
         SourceIdentificationSQSPublicPolicy = "${aws_s3_bucket_object.sqs-public-policy-identification.id}"
         SourceIdentificationS3Encryption = "${aws_s3_bucket_object.s3-unencrypted-bucket-issues-identification.id}"
         SourceIdentificationRDSEncryption = "${aws_s3_bucket_object.rds-unencrypted-instance-identification.id}"
+        SourceIdentificationAzureStoragePublicAccess = "${aws_s3_bucket_object.azure-storage-public-access-identification.id}"
+        SourceIdentificationAzureNSG = "${aws_s3_bucket_object.azure-nsg-issues-identification.id}"
+        SourceIdentificationAzureUnencryptedDisks = "${aws_s3_bucket_object.azure-disk-unencrypted-identification.id}"
+        SourceIdentificationAzureStorageKeysRotation = "${aws_s3_bucket_object.azure-storage-keys-rotation-identification.id}"
+        SourceIdentificationGCPBucketPublicAccess = "${aws_s3_bucket_object.gcp-bucket-public-access-identification.id}"
+        SourceIdentificationGCPFirewall = "${aws_s3_bucket_object.gcp-firewall-issues-identification.id}"
+        SourceIdentificationGCPUnencryptedDisks = "${aws_s3_bucket_object.gcp-disk-unencrypted-identification.id}"
+        SourceIdentificationGCPSAKeysRotation = "${aws_s3_bucket_object.gcp-sa-keys-rotation-identification.id}"
+        MultiCloudLambdaRuntime = "${var.multiCloudLambdaRuntime}"
     }
 
     template_url = "https://${var.s3bucket}.s3.amazonaws.com/${aws_s3_bucket_object.identification-cfn.id}"

@@ -54,6 +54,8 @@ Choose json templates according to desired functionality from the table below an
 
 **Note**: you should deploy `DynamoDB tables`, `Identification functionality` and `Reporting/remediation functionality` CloudFormation stacks to the same AWS region as you configured in [aws.region](/editconfig.html#11-master-aws-account-settings) parameter of **config.json** file.
 
+**Note**: Azure/GCP issue types do not require any additional stacks or cross-account roles: their DynamoDB tables and identification Lambda functions are part of the `DynamoDB tables` and `Identification functionality` stacks. The identification IAM role already has access to all `<ResourcesPrefix>*` DynamoDB tables, including the credentials table with [Azure/GCP credentials](prerequisites.html#5-put-azuregcp-credentials-into-dynamodb). Check the [multi-cloud overview](multicloud_overview.html) for details.
+
 **Note**: note down **ApiUrl** value from the [API functionality](#316-api-functionality) stack [outputs](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-view-stack-data-resources.html) to access Dow Jones Hammer REST API.
 
 **Note:** in case you intend to use Dow Jones Hammer reporting/remediation functionality:
@@ -99,6 +101,17 @@ You will need to set the following parameters:
 * **SourceIdentificationS3Encryption**: the relative path to the Lambda package that identifies S3 un-encrypted bucket issues. The default value is **s3-unencrypted-bucket-issues-identification.zip**.
 * **SourceIdentificationRDSEncryption**: the relative path to the Lambda package that identifies RDS unencrypted instances. The default value is **rds-unencrypted-instance-identification.zip**.
 * **SourceIdentificationAMIPublicAccess**: the relative path to the Lambda package that identifies Public AMIs. The default value is **ami-public-acess-issues-identification.zip**.
+* **SourceIdentificationAzureStoragePublicAccess**: the relative path to the Lambda package that identifies Azure storage public access issues ([multi-cloud](multicloud_overview.html)). The default value is **azure-storage-public-access-identification.zip**.
+* **SourceIdentificationAzureNSG**: the relative path to the Lambda package that identifies Azure NSG unrestricted access issues ([multi-cloud](multicloud_overview.html)). The default value is **azure-nsg-issues-identification.zip**.
+* **SourceIdentificationAzureUnencryptedDisks**: the relative path to the Lambda package that identifies Azure unencrypted disks issues ([multi-cloud](multicloud_overview.html)). The default value is **azure-disk-unencrypted-identification.zip**.
+* **SourceIdentificationAzureStorageKeysRotation**: the relative path to the Lambda package that identifies Azure storage keys rotation issues ([multi-cloud](multicloud_overview.html)). The default value is **azure-storage-keys-rotation-identification.zip**.
+* **SourceIdentificationGCPBucketPublicAccess**: the relative path to the Lambda package that identifies GCP bucket public access issues ([multi-cloud](multicloud_overview.html)). The default value is **gcp-bucket-public-access-identification.zip**.
+* **SourceIdentificationGCPFirewall**: the relative path to the Lambda package that identifies GCP firewall unrestricted access issues ([multi-cloud](multicloud_overview.html)). The default value is **gcp-firewall-issues-identification.zip**.
+* **SourceIdentificationGCPUnencryptedDisks**: the relative path to the Lambda package that identifies GCP unencrypted disks issues ([multi-cloud](multicloud_overview.html)). The default value is **gcp-disk-unencrypted-identification.zip**.
+* **SourceIdentificationGCPSAKeysRotation**: the relative path to the Lambda package that identifies GCP service account keys rotation issues ([multi-cloud](multicloud_overview.html)). The default value is **gcp-sa-keys-rotation-identification.zip**.
+
+**Multi-cloud (optional)**:
+* **MultiCloudLambdaRuntime**: the Lambda runtime of the Azure/GCP identification functions. The default value is **python3.9**. AWS identification functions keep the **python3.6** runtime (the `LambdaRuntime` parameter of the `identification-nested.json` template defaults to **python3.6**).
 
 **VPC config (optional)**:
 * **LambdaSubnets**: comma-separated list, without spaces, of subnet IDs in your VPC to run identification lambdas in.
@@ -124,6 +137,7 @@ You will need to set the following parameters:
 * **SourceS3Bucket**: the name of the S3 bucket you [created](configuredeploy_overview.html#24-create-s3-buckets-for-hammer) to deploy Dow Jones Hammer.
 * **SourceAMIInfo**: the relative path to the Lambda package with AMI autodetect code. The default value is **ami-info.zip**.
 * **SourceReportingRemediation**: the relative path to the EC2 package with Dow Jones Hammer reporting and remediation sources. The default value is **reporting-remediation.zip**.
+* **Python39Version**: the Python 3.9 release built and installed on the reporting/remediation EC2 next to Python 3.6. It is used when [cronjobs.python](editconfig.html#12-scheduling-settings) is set to `python3.9`, which is required by [Azure/GCP](multicloud_overview.html) issue types. The default value is **3.9.18**.
 
 #### 3.1.6. API functionality
 

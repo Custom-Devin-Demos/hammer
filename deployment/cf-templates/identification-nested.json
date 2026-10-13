@@ -69,6 +69,11 @@
         },
         "SNSIdentificationErrors": {
             "Type": "String"
+        },
+        "LambdaRuntime": {
+            "Type": "String",
+            "Default": "python3.6",
+            "Description": "Lambda runtime for initiate and evaluate lambdas"
         }
     },
     "Conditions": {
@@ -99,7 +104,7 @@
                 "MemorySize": 128,
                 "Timeout": "300",
                 "Role": { "Ref": "IdentificationIAMRole" },
-                "Runtime": "python3.6"
+                "Runtime": { "Ref": "LambdaRuntime" }
             }
         },
         "LogGroupLambdaInitiateEvaluation": {
@@ -148,7 +153,7 @@
                 "MemorySize": {"Ref":  "EvaluateLambdaMemorySize"},
                 "Timeout": "300",
                 "Role": { "Ref": "IdentificationIAMRole" },
-                "Runtime": "python3.6"
+                "Runtime": { "Ref": "LambdaRuntime" }
             }
         },
         "LogGroupLambdaEvaluate": {

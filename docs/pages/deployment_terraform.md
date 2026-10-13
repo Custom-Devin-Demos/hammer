@@ -151,6 +151,8 @@ Terraform needs to pass a number of parameters to CloudFormation to create the C
 |`resources-prefix`                 | The prefix for all Dow Jones Hammer resources                              |`hammer-`         |
 |`tag`                              | Map with tags to apply to AWS resources                                    |`{}`              |
 
+The `identification` module also accepts the optional `multiCloudLambdaRuntime` variable (default `python3.9`), the Lambda runtime of the Azure/GCP identification functions. AWS identification functions keep the `python3.6` runtime.
+
 **Note**: Make sure that DynamoDB tables prefix is consistent with **ddb.table_name** for [all issue configurations](editconfig.html#2-configure-issue-specific-hammer-configuration-parameters) and [credentials](editconfig.html#13-reporting-setup-jiraslack) table name.
 
 Sample ```variables.tf```:
@@ -209,6 +211,11 @@ variable "tags" {
     }
 }
 ```
+
+### 3.3. Azure and GCP
+
+No additional Terraform configuration is required for [Azure/GCP](multicloud_overview.html) issue types: the `ddb` module creates their DynamoDB tables and the `identification` module uploads their Lambda packages (`azure-*-identification.zip`, `gcp-*-identification.zip` built by `deployment/build_packages.sh`) and deploys their identification stacks. No cross-account roles are needed for Azure subscriptions or GCP projects.
+After deployment, put the Azure/GCP credentials into the credentials DynamoDB table as described in [prerequisites](prerequisites.html#5-put-azuregcp-credentials-into-dynamodb) and set [cronjobs.python](editconfig.html#12-scheduling-settings) to `python3.9` in `config.json`.
 
 ## 4. Launch Dow Jones Hammer Deployment
 

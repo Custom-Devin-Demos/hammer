@@ -32,6 +32,10 @@ entries:
       url: /features.html
       output: web, pdf
 
+    - title: Multi-Cloud (Azure/GCP) Overview
+      url: /multicloud_overview.html
+      output: web, pdf
+
     - title: Prerequisites
       url: /prerequisites.html
       output: web, pdf
@@ -122,4 +126,36 @@ entries:
 
     - title: AMI public access
       url: /playbook13_amis_public_access.html
+      output: web, pdf
+
+    - title: Azure Storage Public Access
+      url: /playbook14_azure_storage_public_access.html
+      output: web, pdf
+
+    - title: Azure NSG Unrestricted Access
+      url: /playbook15_azure_nsg_unrestricted_access.html
+      output: web, pdf
+
+    - title: Azure Unencrypted Disks
+      url: /playbook16_azure_unencrypted_disks.html
+      output: web, pdf
+
+    - title: Azure Storage Keys Rotation
+      url: /playbook17_azure_storage_keys_rotation.html
+      output: web, pdf
+
+    - title: GCP Bucket Public Access
+      url: /playbook18_gcp_bucket_public_access.html
+      output: web, pdf
+
+    - title: GCP Firewall Unrestricted Access
+      url: /playbook19_gcp_firewall_unrestricted_access.html
+      output: web, pdf
+
+    - title: GCP Unencrypted Disks
+      url: /playbook20_gcp_unencrypted_disks.html
+      output: web, pdf
+
+    - title: GCP Service Account Keys Rotation
+      url: /playbook21_gcp_sa_keys_rotation.html
       output: web, pdf

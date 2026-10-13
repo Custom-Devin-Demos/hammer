@@ -4,3 +4,13 @@ moto==1.3.5
 watchtower
 pytest
 pytest-pythonpath
+azure-identity
+azure-mgmt-storage
+azure-mgmt-network
+azure-mgmt-compute
+google-auth
+google-cloud-storage
+google-cloud-compute
+google-cloud-iam
+jira
+slackclient<2

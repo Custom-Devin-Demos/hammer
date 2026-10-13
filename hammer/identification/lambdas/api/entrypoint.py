@@ -7,6 +7,7 @@ import time
 import boto3
 
 from library.aws.utility import Account, DDB, Sns
+from library.cloud import CloudProvider
 from library.config import Config
 from library.ddb_issues import Operations as IssueOperations
 from library.logger import set_logging
@@ -36,10 +37,31 @@ GLOBAL_SECURITY_FEATURES = ['s3_bucket_acl', 'user_inactivekeys', 'user_keysrota
                             's3_encryption']
 
 
+def is_global_feature(config, security_feature):
+    """ Azure/GCP security features are global (no regions), as well as some AWS ones """
+    if security_feature in GLOBAL_SECURITY_FEATURES:
+        return True
+    module = config.get_module_config_by_name(security_feature)
+    return module is not None and module.provider != CloudProvider.AWS
+
+
+def find_account(config, account_id):
+    """
+    :return: tuple (provider, account name) for AWS account / Azure subscription / GCP project id
+             or (None, None) if account is not defined in config
+    """
+    for provider, accounts in ((CloudProvider.AWS, config.aws.accounts),
+                               (CloudProvider.AZURE, config.azure.accounts),
+                               (CloudProvider.GCP, config.gcp.accounts)):
+        if account_id in accounts:
+            return provider, accounts[account_id]
+    return None, None
+
+
 def start_scan(account_id, regions, security_features, tags, ids):
     config = Config()
 
-    account_name = config.aws.accounts.get(account_id, None)
+    account_provider, account_name = find_account(config, account_id)
 
     if not account_id:
         return bad_request(text="account_id is required parameter")
@@ -56,14 +78,17 @@ def start_scan(account_id, regions, security_features, tags, ids):
     if not security_features:
         security_features = valid_security_features
 
-    all_regions = config.aws.regions
+    if account_provider == CloudProvider.AWS:
+        all_regions = config.aws.regions
 
-    for region in regions:
-        if region not in all_regions:
-            return bad_request(text=f"Region '{region} is not supported")
-    # empty list means we want to scan all supported regions
-    if not regions:
-        regions = all_regions
+        for region in regions:
+            if region not in all_regions:
+                return bad_request(text=f"Region '{region} is not supported")
+        # empty list means we want to scan all supported regions
+        if not regions:
+            regions = all_regions
+    elif regions:
+        return bad_request(text=f"regions are not supported for {account_provider.value} accounts")
 
     if ids is not None and not isinstance(ids, list):
         return bad_request(text=f"'ids' parameter must be list")
@@ -75,11 +100,11 @@ def start_scan(account_id, regions, security_features, tags, ids):
     api_table = main_account.resource("dynamodb").Table(config.api.ddb_table_name)
     to_scan = []
     for security_feature in security_features:
-        accounts = config.get_module_config_by_name(security_feature).accounts
-        if account_id in accounts:
+        module = config.get_module_config_by_name(security_feature)
+        if module.provider == account_provider and account_id in module.accounts:
             to_scan.append(security_feature)
-    regional_services = set(to_scan) - set(GLOBAL_SECURITY_FEATURES)
-    global_services = set(to_scan).intersection(set(GLOBAL_SECURITY_FEATURES))
+    global_services = set(feature for feature in to_scan if is_global_feature(config, feature))
+    regional_services = set(to_scan) - global_services
     total = len(regional_services) * len(regions) + len(global_services)
     request_params = {
         "account_id": account_id,
@@ -92,7 +117,8 @@ def start_scan(account_id, regions, security_features, tags, ids):
     DDB.add_request(api_table, request_id, request_params, total)
 
     for security_feature in to_scan:
-        topic_name = config.get_module_config_by_name(security_feature).sns_topic_name
+        module = config.get_module_config_by_name(security_feature)
+        topic_name = module.sns_topic_name
         topic_arn = get_sns_topic_arn(config, topic_name)
         payload = {
             "account_id": account_id,
@@ -101,6 +127,9 @@ def start_scan(account_id, regions, security_features, tags, ids):
             "sns_arn": topic_arn,
             "request_id": request_id
         }
+        # Azure/GCP APIs are global per subscription/project - no regions chaining
+        if module.provider != CloudProvider.AWS:
+            del payload["regions"]
         Sns.publish(topic_arn, payload)
 
     response = {'request_id': request_id}
@@ -116,23 +145,25 @@ def collect_results(request_info, main_account):
     regions = request_info['request_params']['regions']
     scan_account_id = request_info['request_params']['account_id']
     tags = request_info['request_params']['tags']
+    config = Config()
     response = dict({'global': {}})
+    for sec_feature in security_features:
+        if is_global_feature(config, sec_feature):
+            response['global'][sec_feature] = []
     for region in regions:
         response[region] = {}
         for sec_feature in security_features:
-            if sec_feature not in GLOBAL_SECURITY_FEATURES:
+            if not is_global_feature(config, sec_feature):
                 response[region][sec_feature] = []
-            else:
-                response['global'][sec_feature] = []
 
-    config = Config()
     for security_feature in security_features:
         sec_feature_config = config.get_module_config_by_name(security_feature)
         ddb_table = main_account.resource("dynamodb").Table(sec_feature_config.ddb_table_name)
+        global_feature = is_global_feature(config, security_feature)
         for issue in IssueOperations.get_account_open_issues(ddb_table, scan_account_id):
             if issue.contains_tags(tags) and (
-                    issue.issue_details.region in regions or security_feature in GLOBAL_SECURITY_FEATURES):
-                issue_region = issue.issue_details.region if issue.issue_details.region else 'global'
+                    issue.issue_details.region in regions or global_feature):
+                issue_region = 'global' if global_feature or not issue.issue_details.region else issue.issue_details.region
                 response[issue_region][security_feature].append({'id': issue.issue_id,
                                                                  'issue_details': issue.issue_details.as_dict()})
     return response

@@ -10,6 +10,7 @@ import time
 import botocore.config
 from botocore.exceptions import ClientError
 from boto3.session import Session
+from library.cloud import CloudAccount, CloudProvider
 
 
 class AssumeRole:
@@ -97,12 +98,14 @@ class AssumeRole:
 
 
 @lru_cache(maxsize=128)
-class Account(object):
+class Account(CloudAccount):
     """
     Basic class for AWS account.
     Encapsulates ID / name / region / role name.
     Decorated with LRU cache to reuse sessions between calls.
     """
+    provider = CloudProvider.AWS
+
     def __init__(self,
                  id=AssumeRole.current_account_id(), name=None, region=None,
                  role_name=None):

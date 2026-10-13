@@ -43,6 +43,11 @@
             "Description": "S3 key with Hammer reporting and remediation sources",
             "Type": "String",
             "Default": "reporting-remediation.zip"
+        },
+        "Python39Version": {
+            "Description": "Python 3.9 release to build on the reporting/remediation EC2 (required by Azure/GCP modules, select it with cronjobs.python in config.json)",
+            "Type": "String",
+            "Default": "3.9.18"
         }
     },
     "Mappings": {
@@ -173,20 +178,37 @@
                                 "yum -y install https://centos7.iuscommunity.org/ius-release.rpm\n",
                                 "yum -y install python36u python36u-pip python36u-devel\n",
                                 "pip3.6 install awscli\n",
+                                "# python3.9 for Azure/GCP modules, selected by cronjobs.python in config.json\n",
+                                "yum -y install libffi-devel zlib-devel bzip2-devel xz-devel sqlite-devel readline-devel\n",
+                                "if [ ! -x /usr/local/bin/python3.9 ]; then\n",
+                                "    rm -rf /usr/src/Python-3.9*\n",
+                                "    cd /usr/src\n",
+                                "    curl -sSfLO https://www.python.org/ftp/python/", { "Ref": "Python39Version" }, "/Python-", { "Ref": "Python39Version" }, ".tgz\n",
+                                "    tar xzf Python-", { "Ref": "Python39Version" }, ".tgz\n",
+                                "    cd Python-", { "Ref": "Python39Version" }, "\n",
+                                "    ./configure --prefix=/usr/local\n",
+                                "    make -j$(nproc) altinstall\n",
+                                "    cd /\n",
+                                "fi\n",
+                                "ln -sf /usr/local/bin/python3.9 /usr/bin/python3.9\n",
+                                "ln -sf /usr/local/bin/pip3.9 /usr/bin/pip3.9\n",
+                                "python3.9 -m pip install --upgrade pip\n",
                                 "rm -rf /hammer-correlation-engine\n",
                                 "mkdir -p /hammer-correlation-engine\n",
                                 "cd /hammer-correlation-engine\n",
                                 "aws s3 cp s3://", { "Ref": "SourceS3Bucket" }, "/", { "Ref": "SourceReportingRemediation" }, " .\n",
                                 "unzip -o \\*.zip\n",
                                 "rm -fv *.zip\n",
-                                "pip3.6 install -r requirements.txt\n",
+                                "HAMMER_PYTHON=$(python3.6 -c \"import json; print(json.load(open('config.json')).get('cronjobs', {}).get('python', 'python3.6'))\")\n",
+                                "${HAMMER_PYTHON} -m pip install -r requirements.txt\n",
                                 "echo LOG_GROUP=", { "Ref": "LogGroupReportingRemediation" }, " >> config.ini\n",
                                 "mkdir -p /var/log/hammer\n",
                                 "/bin/cp -f bot/hammer-bot.service /etc/systemd/system/\n",
+                                "sed -i \"s|/bin/python3.6 |/bin/${HAMMER_PYTHON} |\" /etc/systemd/system/hammer-bot.service\n",
                                 "systemctl daemon-reload\n",
                                 "systemctl enable hammer-bot\n",
                                 "systemctl restart hammer-bot\n",
-                                "python3.6 -m cronjobs.automation_scheduler\n"
+                                "${HAMMER_PYTHON} -m cronjobs.automation_scheduler\n"
                             ]
                         ]
                     }

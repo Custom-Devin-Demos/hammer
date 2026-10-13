@@ -458,6 +458,262 @@
                 "TableName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" }, "ec2-public-ami" ] ]}
             }
         },
+        "DynamoDBAzureStoragePublicAccess": {
+            "Type": "AWS::DynamoDB::Table",
+            "DeletionPolicy": "Retain",
+            "DependsOn": ["DynamoDBCredentials"],
+            "Properties": {
+                "AttributeDefinitions": [
+                    {
+                        "AttributeName": "account_id",
+                        "AttributeType": "S"
+                    },
+                    {
+                        "AttributeName": "issue_id",
+                        "AttributeType": "S"
+                    }
+                ],
+                "KeySchema": [
+                    {
+                        "AttributeName": "account_id",
+                        "KeyType": "HASH"
+                    },
+                    {
+                        "AttributeName": "issue_id",
+                        "KeyType": "RANGE"
+                    }
+                ],
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": "10",
+                    "WriteCapacityUnits": "2"
+                },
+                "TableName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" }, "azure-storage-public-access" ] ]}
+            }
+        },
+        "DynamoDBAzureNSG": {
+            "Type": "AWS::DynamoDB::Table",
+            "DeletionPolicy": "Retain",
+            "DependsOn": ["DynamoDBCredentials"],
+            "Properties": {
+                "AttributeDefinitions": [
+                    {
+                        "AttributeName": "account_id",
+                        "AttributeType": "S"
+                    },
+                    {
+                        "AttributeName": "issue_id",
+                        "AttributeType": "S"
+                    }
+                ],
+                "KeySchema": [
+                    {
+                        "AttributeName": "account_id",
+                        "KeyType": "HASH"
+                    },
+                    {
+                        "AttributeName": "issue_id",
+                        "KeyType": "RANGE"
+                    }
+                ],
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": "10",
+                    "WriteCapacityUnits": "2"
+                },
+                "TableName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" }, "azure-nsg-unrestricted" ] ]}
+            }
+        },
+        "DynamoDBAzureUnencryptedDisks": {
+            "Type": "AWS::DynamoDB::Table",
+            "DeletionPolicy": "Retain",
+            "DependsOn": ["DynamoDBCredentials"],
+            "Properties": {
+                "AttributeDefinitions": [
+                    {
+                        "AttributeName": "account_id",
+                        "AttributeType": "S"
+                    },
+                    {
+                        "AttributeName": "issue_id",
+                        "AttributeType": "S"
+                    }
+                ],
+                "KeySchema": [
+                    {
+                        "AttributeName": "account_id",
+                        "KeyType": "HASH"
+                    },
+                    {
+                        "AttributeName": "issue_id",
+                        "KeyType": "RANGE"
+                    }
+                ],
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": "10",
+                    "WriteCapacityUnits": "2"
+                },
+                "TableName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" }, "azure-disks-unencrypted" ] ]}
+            }
+        },
+        "DynamoDBAzureStorageKeysRotation": {
+            "Type": "AWS::DynamoDB::Table",
+            "DeletionPolicy": "Retain",
+            "DependsOn": ["DynamoDBCredentials"],
+            "Properties": {
+                "AttributeDefinitions": [
+                    {
+                        "AttributeName": "account_id",
+                        "AttributeType": "S"
+                    },
+                    {
+                        "AttributeName": "issue_id",
+                        "AttributeType": "S"
+                    }
+                ],
+                "KeySchema": [
+                    {
+                        "AttributeName": "account_id",
+                        "KeyType": "HASH"
+                    },
+                    {
+                        "AttributeName": "issue_id",
+                        "KeyType": "RANGE"
+                    }
+                ],
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": "10",
+                    "WriteCapacityUnits": "2"
+                },
+                "TableName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" }, "azure-storage-keys-rotation" ] ]}
+            }
+        },
+        "DynamoDBGCPBucketPublicAccess": {
+            "Type": "AWS::DynamoDB::Table",
+            "DeletionPolicy": "Retain",
+            "DependsOn": ["DynamoDBCredentials"],
+            "Properties": {
+                "AttributeDefinitions": [
+                    {
+                        "AttributeName": "account_id",
+                        "AttributeType": "S"
+                    },
+                    {
+                        "AttributeName": "issue_id",
+                        "AttributeType": "S"
+                    }
+                ],
+                "KeySchema": [
+                    {
+                        "AttributeName": "account_id",
+                        "KeyType": "HASH"
+                    },
+                    {
+                        "AttributeName": "issue_id",
+                        "KeyType": "RANGE"
+                    }
+                ],
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": "10",
+                    "WriteCapacityUnits": "2"
+                },
+                "TableName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" }, "gcp-bucket-public-access" ] ]}
+            }
+        },
+        "DynamoDBGCPFirewall": {
+            "Type": "AWS::DynamoDB::Table",
+            "DeletionPolicy": "Retain",
+            "DependsOn": ["DynamoDBCredentials"],
+            "Properties": {
+                "AttributeDefinitions": [
+                    {
+                        "AttributeName": "account_id",
+                        "AttributeType": "S"
+                    },
+                    {
+                        "AttributeName": "issue_id",
+                        "AttributeType": "S"
+                    }
+                ],
+                "KeySchema": [
+                    {
+                        "AttributeName": "account_id",
+                        "KeyType": "HASH"
+                    },
+                    {
+                        "AttributeName": "issue_id",
+                        "KeyType": "RANGE"
+                    }
+                ],
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": "10",
+                    "WriteCapacityUnits": "2"
+                },
+                "TableName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" }, "gcp-firewall-unrestricted" ] ]}
+            }
+        },
+        "DynamoDBGCPUnencryptedDisks": {
+            "Type": "AWS::DynamoDB::Table",
+            "DeletionPolicy": "Retain",
+            "DependsOn": ["DynamoDBCredentials"],
+            "Properties": {
+                "AttributeDefinitions": [
+                    {
+                        "AttributeName": "account_id",
+                        "AttributeType": "S"
+                    },
+                    {
+                        "AttributeName": "issue_id",
+                        "AttributeType": "S"
+                    }
+                ],
+                "KeySchema": [
+                    {
+                        "AttributeName": "account_id",
+                        "KeyType": "HASH"
+                    },
+                    {
+                        "AttributeName": "issue_id",
+                        "KeyType": "RANGE"
+                    }
+                ],
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": "10",
+                    "WriteCapacityUnits": "2"
+                },
+                "TableName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" }, "gcp-disks-unencrypted" ] ]}
+            }
+        },
+        "DynamoDBGCPSAKeysRotation": {
+            "Type": "AWS::DynamoDB::Table",
+            "DeletionPolicy": "Retain",
+            "DependsOn": ["DynamoDBCredentials"],
+            "Properties": {
+                "AttributeDefinitions": [
+                    {
+                        "AttributeName": "account_id",
+                        "AttributeType": "S"
+                    },
+                    {
+                        "AttributeName": "issue_id",
+                        "AttributeType": "S"
+                    }
+                ],
+                "KeySchema": [
+                    {
+                        "AttributeName": "account_id",
+                        "KeyType": "HASH"
+                    },
+                    {
+                        "AttributeName": "issue_id",
+                        "KeyType": "RANGE"
+                    }
+                ],
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": "10",
+                    "WriteCapacityUnits": "2"
+                },
+                "TableName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" }, "gcp-sa-keys-rotation" ] ]}
+            }
+        },
         "DynamoDBApiRequests": {
             "Type": "AWS::DynamoDB::Table",
             "DependsOn": ["DynamoDBCredentials", "DynamoDBSQSPublicPolicy"],

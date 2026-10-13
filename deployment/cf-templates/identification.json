@@ -13,6 +13,12 @@
                     ]
                 },
                 {
+                    "Label": { "default": "Multi-cloud (Azure/GCP) setup" },
+                    "Parameters": [
+                        "MultiCloudLambdaRuntime"
+                    ]
+                },
+                {
                     "Label": { "default": "Sources" },
                     "Parameters": [
                         "SourceS3Bucket",
@@ -27,7 +33,15 @@
                         "SourceIdentificationEBSVolumes",
                         "SourceIdentificationEBSSnapshots",
                         "SourceIdentificationRDSSnapshots",
-                        "SourceIdentificationAMIPublicAccess"
+                        "SourceIdentificationAMIPublicAccess",
+                        "SourceIdentificationAzureStoragePublicAccess",
+                        "SourceIdentificationAzureNSG",
+                        "SourceIdentificationAzureUnencryptedDisks",
+                        "SourceIdentificationAzureStorageKeysRotation",
+                        "SourceIdentificationGCPBucketPublicAccess",
+                        "SourceIdentificationGCPFirewall",
+                        "SourceIdentificationGCPUnencryptedDisks",
+                        "SourceIdentificationGCPSAKeysRotation"
                     ]
                 },
                 {
@@ -92,6 +106,33 @@
                 },
                 "SourceIdentificationAMIPublicAccess":{
                     "default": "Relative path to Public AMI sources"
+                },
+                "SourceIdentificationAzureStoragePublicAccess": {
+                    "default": "Relative path to Azure storage public access lambda sources"
+                },
+                "SourceIdentificationAzureNSG": {
+                    "default": "Relative path to Azure NSG unrestricted access lambda sources"
+                },
+                "SourceIdentificationAzureUnencryptedDisks": {
+                    "default": "Relative path to Azure unencrypted disks lambda sources"
+                },
+                "SourceIdentificationAzureStorageKeysRotation": {
+                    "default": "Relative path to Azure storage keys rotation lambda sources"
+                },
+                "SourceIdentificationGCPBucketPublicAccess": {
+                    "default": "Relative path to GCP bucket public access lambda sources"
+                },
+                "SourceIdentificationGCPFirewall": {
+                    "default": "Relative path to GCP firewall unrestricted access lambda sources"
+                },
+                "SourceIdentificationGCPUnencryptedDisks": {
+                    "default": "Relative path to GCP unencrypted disks lambda sources"
+                },
+                "SourceIdentificationGCPSAKeysRotation": {
+                    "default": "Relative path to GCP service account keys rotation lambda sources"
+                },
+                "MultiCloudLambdaRuntime": {
+                    "default": "Lambda runtime for Azure/GCP identification lambdas"
                 }
             }
         }
@@ -188,6 +229,43 @@
         "SourceIdentificationRDSEncryption": {
             "Type": "String",
             "Default": "rds-unencrypted-instance-identification.zip"
+        },
+        "SourceIdentificationAzureStoragePublicAccess": {
+            "Type": "String",
+            "Default": "azure-storage-public-access-identification.zip"
+        },
+        "SourceIdentificationAzureNSG": {
+            "Type": "String",
+            "Default": "azure-nsg-issues-identification.zip"
+        },
+        "SourceIdentificationAzureUnencryptedDisks": {
+            "Type": "String",
+            "Default": "azure-disk-unencrypted-identification.zip"
+        },
+        "SourceIdentificationAzureStorageKeysRotation": {
+            "Type": "String",
+            "Default": "azure-storage-keys-rotation-identification.zip"
+        },
+        "SourceIdentificationGCPBucketPublicAccess": {
+            "Type": "String",
+            "Default": "gcp-bucket-public-access-identification.zip"
+        },
+        "SourceIdentificationGCPFirewall": {
+            "Type": "String",
+            "Default": "gcp-firewall-issues-identification.zip"
+        },
+        "SourceIdentificationGCPUnencryptedDisks": {
+            "Type": "String",
+            "Default": "gcp-disk-unencrypted-identification.zip"
+        },
+        "SourceIdentificationGCPSAKeysRotation": {
+            "Type": "String",
+            "Default": "gcp-sa-keys-rotation-identification.zip"
+        },
+        "MultiCloudLambdaRuntime": {
+            "Type": "String",
+            "Default": "python3.9",
+            "Description": "Lambda runtime for Azure/GCP identification lambdas (Azure/GCP SDKs require Python 3.8+)"
         }
     },
     "Conditions": {
@@ -406,6 +484,126 @@
             },
             "IdentifyRDSEncryptionLambdaFunctionName": {
                 "value": "describe-rds-encryption"
+            },
+            "IdentificationMetricAzureStoragePublicAccessError": {
+                "value": "AzureStoragePublicAccessError"
+            },
+            "SNSDisplayNameAzureStoragePublicAccess": {
+                "value": "describe-azure-storage-public-access-sns"
+            },
+            "SNSTopicNameAzureStoragePublicAccess": {
+                "value": "describe-azure-storage-public-access-lambda"
+            },
+            "InitiateAzureStoragePublicAccessLambdaFunctionName": {
+                "value": "initiate-azure-storage-public-access"
+            },
+            "IdentifyAzureStoragePublicAccessLambdaFunctionName": {
+                "value": "describe-azure-storage-public-access"
+            },
+            "IdentificationMetricAzureNSGError": {
+                "value": "AzureNSGError"
+            },
+            "SNSDisplayNameAzureNSG": {
+                "value": "describe-azure-nsg-sns"
+            },
+            "SNSTopicNameAzureNSG": {
+                "value": "describe-azure-nsg-lambda"
+            },
+            "InitiateAzureNSGLambdaFunctionName": {
+                "value": "initiate-azure-nsg"
+            },
+            "IdentifyAzureNSGLambdaFunctionName": {
+                "value": "describe-azure-nsg"
+            },
+            "IdentificationMetricAzureUnencryptedDisksError": {
+                "value": "AzureUnencryptedDisksError"
+            },
+            "SNSDisplayNameAzureUnencryptedDisks": {
+                "value": "describe-azure-unencrypted-disks-sns"
+            },
+            "SNSTopicNameAzureUnencryptedDisks": {
+                "value": "describe-azure-unencrypted-disks-lambda"
+            },
+            "InitiateAzureUnencryptedDisksLambdaFunctionName": {
+                "value": "initiate-azure-unencrypted-disks"
+            },
+            "IdentifyAzureUnencryptedDisksLambdaFunctionName": {
+                "value": "describe-azure-unencrypted-disks"
+            },
+            "IdentificationMetricAzureStorageKeysRotationError": {
+                "value": "AzureStorageKeysRotationError"
+            },
+            "SNSDisplayNameAzureStorageKeysRotation": {
+                "value": "describe-azure-storage-keys-rotation-sns"
+            },
+            "SNSTopicNameAzureStorageKeysRotation": {
+                "value": "describe-azure-storage-keys-rotation-lambda"
+            },
+            "InitiateAzureStorageKeysRotationLambdaFunctionName": {
+                "value": "initiate-azure-storage-keys-rotation"
+            },
+            "IdentifyAzureStorageKeysRotationLambdaFunctionName": {
+                "value": "describe-azure-storage-keys-rotation"
+            },
+            "IdentificationMetricGCPBucketPublicAccessError": {
+                "value": "GCPBucketPublicAccessError"
+            },
+            "SNSDisplayNameGCPBucketPublicAccess": {
+                "value": "describe-gcp-bucket-public-access-sns"
+            },
+            "SNSTopicNameGCPBucketPublicAccess": {
+                "value": "describe-gcp-bucket-public-access-lambda"
+            },
+            "InitiateGCPBucketPublicAccessLambdaFunctionName": {
+                "value": "initiate-gcp-bucket-public-access"
+            },
+            "IdentifyGCPBucketPublicAccessLambdaFunctionName": {
+                "value": "describe-gcp-bucket-public-access"
+            },
+            "IdentificationMetricGCPFirewallError": {
+                "value": "GCPFirewallError"
+            },
+            "SNSDisplayNameGCPFirewall": {
+                "value": "describe-gcp-firewall-sns"
+            },
+            "SNSTopicNameGCPFirewall": {
+                "value": "describe-gcp-firewall-lambda"
+            },
+            "InitiateGCPFirewallLambdaFunctionName": {
+                "value": "initiate-gcp-firewall"
+            },
+            "IdentifyGCPFirewallLambdaFunctionName": {
+                "value": "describe-gcp-firewall"
+            },
+            "IdentificationMetricGCPUnencryptedDisksError": {
+                "value": "GCPUnencryptedDisksError"
+            },
+            "SNSDisplayNameGCPUnencryptedDisks": {
+                "value": "describe-gcp-unencrypted-disks-sns"
+            },
+            "SNSTopicNameGCPUnencryptedDisks": {
+                "value": "describe-gcp-unencrypted-disks-lambda"
+            },
+            "InitiateGCPUnencryptedDisksLambdaFunctionName": {
+                "value": "initiate-gcp-unencrypted-disks"
+            },
+            "IdentifyGCPUnencryptedDisksLambdaFunctionName": {
+                "value": "describe-gcp-unencrypted-disks"
+            },
+            "IdentificationMetricGCPSAKeysRotationError": {
+                "value": "GCPSAKeysRotationError"
+            },
+            "SNSDisplayNameGCPSAKeysRotation": {
+                "value": "describe-gcp-sa-keys-rotation-sns"
+            },
+            "SNSTopicNameGCPSAKeysRotation": {
+                "value": "describe-gcp-sa-keys-rotation-lambda"
+            },
+            "InitiateGCPSAKeysRotationLambdaFunctionName": {
+                "value": "initiate-gcp-sa-keys-rotation"
+            },
+            "IdentifyGCPSAKeysRotationLambdaFunctionName": {
+                "value": "describe-gcp-sa-keys-rotation"
             }
         }
     },
@@ -1096,6 +1294,334 @@
                                                   { "Fn::FindInMap": ["NamingStandards", "SNSTopicNameAMIPublicAccess", "value"] } ]
                     ]},
                     "SNSIdentificationErrors": {"Ref":  "SNSIdentificationErrors"}
+                }
+            }
+        },
+        "StackEvaluateAzureStoragePublicAccess": {
+            "Type": "AWS::CloudFormation::Stack",
+            "Properties": {
+                "TemplateURL": {"Ref":  "NestedStackTemplate"},
+                "Parameters": {
+                    "SourceS3Bucket": { "Ref": "SourceS3Bucket" },
+                    "IdentificationIAMRole": {"Fn::Join" : ["", [ "arn:aws:iam::",
+                                             { "Ref": "AWS::AccountId" },
+                                             ":role/",
+                                             { "Ref": "ResourcesPrefix" },
+                                             { "Ref": "IdentificationIAMRole" }
+                                           ] ]},
+                    "IdentificationCheckRateExpression": {"Fn::Join": ["", [ "cron(", "50 ", { "Ref": "IdentificationCheckRateExpression" }, ")" ] ]},
+                    "LambdaSubnets": {"Ref":  "LambdaSubnets"},
+                    "LambdaSecurityGroups": {"Ref":  "LambdaSecurityGroups"},
+                    "IdentificationLambdaSource": { "Ref": "SourceIdentificationAzureStoragePublicAccess" },
+                    "InitiateLambdaDescription": "Lambda function for initiate to identify Azure storage accounts with public containers.",
+                    "EvaluateLambdaDescription": "Lambda function to describe Azure storage accounts with public containers.",
+                    "InitiateLambdaName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                                                     { "Fn::FindInMap": ["NamingStandards", "InitiateAzureStoragePublicAccessLambdaFunctionName", "value"] } ]
+                                              ]},
+                    "EvaluateLambdaName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                                                     { "Fn::FindInMap": ["NamingStandards", "IdentifyAzureStoragePublicAccessLambdaFunctionName", "value"] } ]
+                                              ]},
+                    "InitiateLambdaHandler": "initiate_to_desc_azure_storage_public_access.lambda_handler",
+                    "EvaluateLambdaHandler": "describe_azure_storage_public_access.lambda_handler",
+                    "EvaluateLambdaMemorySize": 512,
+                    "LambdaLogsForwarderArn": { "Fn::GetAtt": ["LambdaLogsForwarder", "Arn"] },
+                    "EventRuleDescription": "Hammer ScheduledRule to initiate Azure storage public access evaluations",
+                    "EventRuleName": {"Fn::Join" : ["", [{ "Ref": "ResourcesPrefix" }, "InitiateEvaluationAzureStoragePublicAccess"] ] },
+                    "SNSDisplayName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                        { "Fn::FindInMap": ["NamingStandards", "SNSDisplayNameAzureStoragePublicAccess", "value"] } ]
+                    ]},
+                    "SNSTopicName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                        { "Fn::FindInMap": ["NamingStandards", "SNSTopicNameAzureStoragePublicAccess", "value"] } ]
+                    ]},
+                    "SNSIdentificationErrors": {"Ref":  "SNSIdentificationErrors"},
+                    "LambdaRuntime": {"Ref":  "MultiCloudLambdaRuntime"}
+                }
+            }
+        },
+        "StackEvaluateAzureNSG": {
+            "Type": "AWS::CloudFormation::Stack",
+            "Properties": {
+                "TemplateURL": {"Ref":  "NestedStackTemplate"},
+                "Parameters": {
+                    "SourceS3Bucket": { "Ref": "SourceS3Bucket" },
+                    "IdentificationIAMRole": {"Fn::Join" : ["", [ "arn:aws:iam::",
+                                             { "Ref": "AWS::AccountId" },
+                                             ":role/",
+                                             { "Ref": "ResourcesPrefix" },
+                                             { "Ref": "IdentificationIAMRole" }
+                                           ] ]},
+                    "IdentificationCheckRateExpression": {"Fn::Join": ["", [ "cron(", "50 ", { "Ref": "IdentificationCheckRateExpression" }, ")" ] ]},
+                    "LambdaSubnets": {"Ref":  "LambdaSubnets"},
+                    "LambdaSecurityGroups": {"Ref":  "LambdaSecurityGroups"},
+                    "IdentificationLambdaSource": { "Ref": "SourceIdentificationAzureNSG" },
+                    "InitiateLambdaDescription": "Lambda function for initiate to identify Azure NSGs with unrestricted access.",
+                    "EvaluateLambdaDescription": "Lambda function to describe Azure NSGs with unrestricted access.",
+                    "InitiateLambdaName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                                                     { "Fn::FindInMap": ["NamingStandards", "InitiateAzureNSGLambdaFunctionName", "value"] } ]
+                                              ]},
+                    "EvaluateLambdaName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                                                     { "Fn::FindInMap": ["NamingStandards", "IdentifyAzureNSGLambdaFunctionName", "value"] } ]
+                                              ]},
+                    "InitiateLambdaHandler": "initiate_to_desc_azure_nsg_issues.lambda_handler",
+                    "EvaluateLambdaHandler": "describe_azure_nsg_issues.lambda_handler",
+                    "EvaluateLambdaMemorySize": 512,
+                    "LambdaLogsForwarderArn": { "Fn::GetAtt": ["LambdaLogsForwarder", "Arn"] },
+                    "EventRuleDescription": "Hammer ScheduledRule to initiate Azure NSG unrestricted access evaluations",
+                    "EventRuleName": {"Fn::Join" : ["", [{ "Ref": "ResourcesPrefix" }, "InitiateEvaluationAzureNSG"] ] },
+                    "SNSDisplayName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                        { "Fn::FindInMap": ["NamingStandards", "SNSDisplayNameAzureNSG", "value"] } ]
+                    ]},
+                    "SNSTopicName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                        { "Fn::FindInMap": ["NamingStandards", "SNSTopicNameAzureNSG", "value"] } ]
+                    ]},
+                    "SNSIdentificationErrors": {"Ref":  "SNSIdentificationErrors"},
+                    "LambdaRuntime": {"Ref":  "MultiCloudLambdaRuntime"}
+                }
+            }
+        },
+        "StackEvaluateAzureUnencryptedDisks": {
+            "Type": "AWS::CloudFormation::Stack",
+            "Properties": {
+                "TemplateURL": {"Ref":  "NestedStackTemplate"},
+                "Parameters": {
+                    "SourceS3Bucket": { "Ref": "SourceS3Bucket" },
+                    "IdentificationIAMRole": {"Fn::Join" : ["", [ "arn:aws:iam::",
+                                             { "Ref": "AWS::AccountId" },
+                                             ":role/",
+                                             { "Ref": "ResourcesPrefix" },
+                                             { "Ref": "IdentificationIAMRole" }
+                                           ] ]},
+                    "IdentificationCheckRateExpression": {"Fn::Join": ["", [ "cron(", "55 ", { "Ref": "IdentificationCheckRateExpression" }, ")" ] ]},
+                    "LambdaSubnets": {"Ref":  "LambdaSubnets"},
+                    "LambdaSecurityGroups": {"Ref":  "LambdaSecurityGroups"},
+                    "IdentificationLambdaSource": { "Ref": "SourceIdentificationAzureUnencryptedDisks" },
+                    "InitiateLambdaDescription": "Lambda function for initiate to identify unencrypted Azure managed disks.",
+                    "EvaluateLambdaDescription": "Lambda function to describe unencrypted Azure managed disks.",
+                    "InitiateLambdaName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                                                     { "Fn::FindInMap": ["NamingStandards", "InitiateAzureUnencryptedDisksLambdaFunctionName", "value"] } ]
+                                              ]},
+                    "EvaluateLambdaName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                                                     { "Fn::FindInMap": ["NamingStandards", "IdentifyAzureUnencryptedDisksLambdaFunctionName", "value"] } ]
+                                              ]},
+                    "InitiateLambdaHandler": "initiate_to_desc_azure_unencrypted_disks.lambda_handler",
+                    "EvaluateLambdaHandler": "describe_azure_unencrypted_disks.lambda_handler",
+                    "EvaluateLambdaMemorySize": 512,
+                    "LambdaLogsForwarderArn": { "Fn::GetAtt": ["LambdaLogsForwarder", "Arn"] },
+                    "EventRuleDescription": "Hammer ScheduledRule to initiate Azure unencrypted disks evaluations",
+                    "EventRuleName": {"Fn::Join" : ["", [{ "Ref": "ResourcesPrefix" }, "InitiateEvaluationAzureUnencryptedDisks"] ] },
+                    "SNSDisplayName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                        { "Fn::FindInMap": ["NamingStandards", "SNSDisplayNameAzureUnencryptedDisks", "value"] } ]
+                    ]},
+                    "SNSTopicName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                        { "Fn::FindInMap": ["NamingStandards", "SNSTopicNameAzureUnencryptedDisks", "value"] } ]
+                    ]},
+                    "SNSIdentificationErrors": {"Ref":  "SNSIdentificationErrors"},
+                    "LambdaRuntime": {"Ref":  "MultiCloudLambdaRuntime"}
+                }
+            }
+        },
+        "StackEvaluateAzureStorageKeysRotation": {
+            "Type": "AWS::CloudFormation::Stack",
+            "Properties": {
+                "TemplateURL": {"Ref":  "NestedStackTemplate"},
+                "Parameters": {
+                    "SourceS3Bucket": { "Ref": "SourceS3Bucket" },
+                    "IdentificationIAMRole": {"Fn::Join" : ["", [ "arn:aws:iam::",
+                                             { "Ref": "AWS::AccountId" },
+                                             ":role/",
+                                             { "Ref": "ResourcesPrefix" },
+                                             { "Ref": "IdentificationIAMRole" }
+                                           ] ]},
+                    "IdentificationCheckRateExpression": {"Fn::Join": ["", [ "cron(", "55 ", { "Ref": "IdentificationCheckRateExpression" }, ")" ] ]},
+                    "LambdaSubnets": {"Ref":  "LambdaSubnets"},
+                    "LambdaSecurityGroups": {"Ref":  "LambdaSecurityGroups"},
+                    "IdentificationLambdaSource": { "Ref": "SourceIdentificationAzureStorageKeysRotation" },
+                    "InitiateLambdaDescription": "Lambda function for initiate to identify Azure storage account keys rotation issues.",
+                    "EvaluateLambdaDescription": "Lambda function to describe Azure storage account keys rotation issues.",
+                    "InitiateLambdaName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                                                     { "Fn::FindInMap": ["NamingStandards", "InitiateAzureStorageKeysRotationLambdaFunctionName", "value"] } ]
+                                              ]},
+                    "EvaluateLambdaName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                                                     { "Fn::FindInMap": ["NamingStandards", "IdentifyAzureStorageKeysRotationLambdaFunctionName", "value"] } ]
+                                              ]},
+                    "InitiateLambdaHandler": "initiate_to_desc_azure_storage_keys_rotation.lambda_handler",
+                    "EvaluateLambdaHandler": "describe_azure_storage_keys_rotation.lambda_handler",
+                    "EvaluateLambdaMemorySize": 512,
+                    "LambdaLogsForwarderArn": { "Fn::GetAtt": ["LambdaLogsForwarder", "Arn"] },
+                    "EventRuleDescription": "Hammer ScheduledRule to initiate Azure storage keys rotation evaluations",
+                    "EventRuleName": {"Fn::Join" : ["", [{ "Ref": "ResourcesPrefix" }, "InitiateEvaluationAzureStorageKeysRotation"] ] },
+                    "SNSDisplayName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                        { "Fn::FindInMap": ["NamingStandards", "SNSDisplayNameAzureStorageKeysRotation", "value"] } ]
+                    ]},
+                    "SNSTopicName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                        { "Fn::FindInMap": ["NamingStandards", "SNSTopicNameAzureStorageKeysRotation", "value"] } ]
+                    ]},
+                    "SNSIdentificationErrors": {"Ref":  "SNSIdentificationErrors"},
+                    "LambdaRuntime": {"Ref":  "MultiCloudLambdaRuntime"}
+                }
+            }
+        },
+        "StackEvaluateGCPBucketPublicAccess": {
+            "Type": "AWS::CloudFormation::Stack",
+            "Properties": {
+                "TemplateURL": {"Ref":  "NestedStackTemplate"},
+                "Parameters": {
+                    "SourceS3Bucket": { "Ref": "SourceS3Bucket" },
+                    "IdentificationIAMRole": {"Fn::Join" : ["", [ "arn:aws:iam::",
+                                             { "Ref": "AWS::AccountId" },
+                                             ":role/",
+                                             { "Ref": "ResourcesPrefix" },
+                                             { "Ref": "IdentificationIAMRole" }
+                                           ] ]},
+                    "IdentificationCheckRateExpression": {"Fn::Join": ["", [ "cron(", "0 ", { "Ref": "IdentificationCheckRateExpression" }, ")" ] ]},
+                    "LambdaSubnets": {"Ref":  "LambdaSubnets"},
+                    "LambdaSecurityGroups": {"Ref":  "LambdaSecurityGroups"},
+                    "IdentificationLambdaSource": { "Ref": "SourceIdentificationGCPBucketPublicAccess" },
+                    "InitiateLambdaDescription": "Lambda function for initiate to identify public GCP buckets.",
+                    "EvaluateLambdaDescription": "Lambda function to describe public GCP buckets.",
+                    "InitiateLambdaName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                                                     { "Fn::FindInMap": ["NamingStandards", "InitiateGCPBucketPublicAccessLambdaFunctionName", "value"] } ]
+                                              ]},
+                    "EvaluateLambdaName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                                                     { "Fn::FindInMap": ["NamingStandards", "IdentifyGCPBucketPublicAccessLambdaFunctionName", "value"] } ]
+                                              ]},
+                    "InitiateLambdaHandler": "initiate_to_desc_gcp_bucket_public_access.lambda_handler",
+                    "EvaluateLambdaHandler": "describe_gcp_bucket_public_access.lambda_handler",
+                    "EvaluateLambdaMemorySize": 512,
+                    "LambdaLogsForwarderArn": { "Fn::GetAtt": ["LambdaLogsForwarder", "Arn"] },
+                    "EventRuleDescription": "Hammer ScheduledRule to initiate GCP bucket public access evaluations",
+                    "EventRuleName": {"Fn::Join" : ["", [{ "Ref": "ResourcesPrefix" }, "InitiateEvaluationGCPBucketPublicAccess"] ] },
+                    "SNSDisplayName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                        { "Fn::FindInMap": ["NamingStandards", "SNSDisplayNameGCPBucketPublicAccess", "value"] } ]
+                    ]},
+                    "SNSTopicName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                        { "Fn::FindInMap": ["NamingStandards", "SNSTopicNameGCPBucketPublicAccess", "value"] } ]
+                    ]},
+                    "SNSIdentificationErrors": {"Ref":  "SNSIdentificationErrors"},
+                    "LambdaRuntime": {"Ref":  "MultiCloudLambdaRuntime"}
+                }
+            }
+        },
+        "StackEvaluateGCPFirewall": {
+            "Type": "AWS::CloudFormation::Stack",
+            "Properties": {
+                "TemplateURL": {"Ref":  "NestedStackTemplate"},
+                "Parameters": {
+                    "SourceS3Bucket": { "Ref": "SourceS3Bucket" },
+                    "IdentificationIAMRole": {"Fn::Join" : ["", [ "arn:aws:iam::",
+                                             { "Ref": "AWS::AccountId" },
+                                             ":role/",
+                                             { "Ref": "ResourcesPrefix" },
+                                             { "Ref": "IdentificationIAMRole" }
+                                           ] ]},
+                    "IdentificationCheckRateExpression": {"Fn::Join": ["", [ "cron(", "0 ", { "Ref": "IdentificationCheckRateExpression" }, ")" ] ]},
+                    "LambdaSubnets": {"Ref":  "LambdaSubnets"},
+                    "LambdaSecurityGroups": {"Ref":  "LambdaSecurityGroups"},
+                    "IdentificationLambdaSource": { "Ref": "SourceIdentificationGCPFirewall" },
+                    "InitiateLambdaDescription": "Lambda function for initiate to identify GCP firewall rules with unrestricted access.",
+                    "EvaluateLambdaDescription": "Lambda function to describe GCP firewall rules with unrestricted access.",
+                    "InitiateLambdaName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                                                     { "Fn::FindInMap": ["NamingStandards", "InitiateGCPFirewallLambdaFunctionName", "value"] } ]
+                                              ]},
+                    "EvaluateLambdaName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                                                     { "Fn::FindInMap": ["NamingStandards", "IdentifyGCPFirewallLambdaFunctionName", "value"] } ]
+                                              ]},
+                    "InitiateLambdaHandler": "initiate_to_desc_gcp_firewall_issues.lambda_handler",
+                    "EvaluateLambdaHandler": "describe_gcp_firewall_issues.lambda_handler",
+                    "EvaluateLambdaMemorySize": 512,
+                    "LambdaLogsForwarderArn": { "Fn::GetAtt": ["LambdaLogsForwarder", "Arn"] },
+                    "EventRuleDescription": "Hammer ScheduledRule to initiate GCP firewall unrestricted access evaluations",
+                    "EventRuleName": {"Fn::Join" : ["", [{ "Ref": "ResourcesPrefix" }, "InitiateEvaluationGCPFirewall"] ] },
+                    "SNSDisplayName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                        { "Fn::FindInMap": ["NamingStandards", "SNSDisplayNameGCPFirewall", "value"] } ]
+                    ]},
+                    "SNSTopicName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                        { "Fn::FindInMap": ["NamingStandards", "SNSTopicNameGCPFirewall", "value"] } ]
+                    ]},
+                    "SNSIdentificationErrors": {"Ref":  "SNSIdentificationErrors"},
+                    "LambdaRuntime": {"Ref":  "MultiCloudLambdaRuntime"}
+                }
+            }
+        },
+        "StackEvaluateGCPUnencryptedDisks": {
+            "Type": "AWS::CloudFormation::Stack",
+            "Properties": {
+                "TemplateURL": {"Ref":  "NestedStackTemplate"},
+                "Parameters": {
+                    "SourceS3Bucket": { "Ref": "SourceS3Bucket" },
+                    "IdentificationIAMRole": {"Fn::Join" : ["", [ "arn:aws:iam::",
+                                             { "Ref": "AWS::AccountId" },
+                                             ":role/",
+                                             { "Ref": "ResourcesPrefix" },
+                                             { "Ref": "IdentificationIAMRole" }
+                                           ] ]},
+                    "IdentificationCheckRateExpression": {"Fn::Join": ["", [ "cron(", "5 ", { "Ref": "IdentificationCheckRateExpression" }, ")" ] ]},
+                    "LambdaSubnets": {"Ref":  "LambdaSubnets"},
+                    "LambdaSecurityGroups": {"Ref":  "LambdaSecurityGroups"},
+                    "IdentificationLambdaSource": { "Ref": "SourceIdentificationGCPUnencryptedDisks" },
+                    "InitiateLambdaDescription": "Lambda function for initiate to identify GCP disks without customer-managed encryption.",
+                    "EvaluateLambdaDescription": "Lambda function to describe GCP disks without customer-managed encryption.",
+                    "InitiateLambdaName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                                                     { "Fn::FindInMap": ["NamingStandards", "InitiateGCPUnencryptedDisksLambdaFunctionName", "value"] } ]
+                                              ]},
+                    "EvaluateLambdaName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                                                     { "Fn::FindInMap": ["NamingStandards", "IdentifyGCPUnencryptedDisksLambdaFunctionName", "value"] } ]
+                                              ]},
+                    "InitiateLambdaHandler": "initiate_to_desc_gcp_unencrypted_disks.lambda_handler",
+                    "EvaluateLambdaHandler": "describe_gcp_unencrypted_disks.lambda_handler",
+                    "EvaluateLambdaMemorySize": 512,
+                    "LambdaLogsForwarderArn": { "Fn::GetAtt": ["LambdaLogsForwarder", "Arn"] },
+                    "EventRuleDescription": "Hammer ScheduledRule to initiate GCP unencrypted disks evaluations",
+                    "EventRuleName": {"Fn::Join" : ["", [{ "Ref": "ResourcesPrefix" }, "InitiateEvaluationGCPUnencryptedDisks"] ] },
+                    "SNSDisplayName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                        { "Fn::FindInMap": ["NamingStandards", "SNSDisplayNameGCPUnencryptedDisks", "value"] } ]
+                    ]},
+                    "SNSTopicName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                        { "Fn::FindInMap": ["NamingStandards", "SNSTopicNameGCPUnencryptedDisks", "value"] } ]
+                    ]},
+                    "SNSIdentificationErrors": {"Ref":  "SNSIdentificationErrors"},
+                    "LambdaRuntime": {"Ref":  "MultiCloudLambdaRuntime"}
+                }
+            }
+        },
+        "StackEvaluateGCPSAKeysRotation": {
+            "Type": "AWS::CloudFormation::Stack",
+            "Properties": {
+                "TemplateURL": {"Ref":  "NestedStackTemplate"},
+                "Parameters": {
+                    "SourceS3Bucket": { "Ref": "SourceS3Bucket" },
+                    "IdentificationIAMRole": {"Fn::Join" : ["", [ "arn:aws:iam::",
+                                             { "Ref": "AWS::AccountId" },
+                                             ":role/",
+                                             { "Ref": "ResourcesPrefix" },
+                                             { "Ref": "IdentificationIAMRole" }
+                                           ] ]},
+                    "IdentificationCheckRateExpression": {"Fn::Join": ["", [ "cron(", "5 ", { "Ref": "IdentificationCheckRateExpression" }, ")" ] ]},
+                    "LambdaSubnets": {"Ref":  "LambdaSubnets"},
+                    "LambdaSecurityGroups": {"Ref":  "LambdaSecurityGroups"},
+                    "IdentificationLambdaSource": { "Ref": "SourceIdentificationGCPSAKeysRotation" },
+                    "InitiateLambdaDescription": "Lambda function for initiate to identify GCP service account keys rotation issues.",
+                    "EvaluateLambdaDescription": "Lambda function to describe GCP service account keys rotation issues.",
+                    "InitiateLambdaName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                                                     { "Fn::FindInMap": ["NamingStandards", "InitiateGCPSAKeysRotationLambdaFunctionName", "value"] } ]
+                                              ]},
+                    "EvaluateLambdaName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                                                     { "Fn::FindInMap": ["NamingStandards", "IdentifyGCPSAKeysRotationLambdaFunctionName", "value"] } ]
+                                              ]},
+                    "InitiateLambdaHandler": "initiate_to_desc_gcp_sa_keys_rotation.lambda_handler",
+                    "EvaluateLambdaHandler": "describe_gcp_sa_keys_rotation.lambda_handler",
+                    "EvaluateLambdaMemorySize": 512,
+                    "LambdaLogsForwarderArn": { "Fn::GetAtt": ["LambdaLogsForwarder", "Arn"] },
+                    "EventRuleDescription": "Hammer ScheduledRule to initiate GCP service account keys rotation evaluations",
+                    "EventRuleName": {"Fn::Join" : ["", [{ "Ref": "ResourcesPrefix" }, "InitiateEvaluationGCPSAKeysRotation"] ] },
+                    "SNSDisplayName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                        { "Fn::FindInMap": ["NamingStandards", "SNSDisplayNameGCPSAKeysRotation", "value"] } ]
+                    ]},
+                    "SNSTopicName": {"Fn::Join" : ["", [ { "Ref": "ResourcesPrefix" },
+                        { "Fn::FindInMap": ["NamingStandards", "SNSTopicNameGCPSAKeysRotation", "value"] } ]
+                    ]},
+                    "SNSIdentificationErrors": {"Ref":  "SNSIdentificationErrors"},
+                    "LambdaRuntime": {"Ref":  "MultiCloudLambdaRuntime"}
                 }
             }
         }

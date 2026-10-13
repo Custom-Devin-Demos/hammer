@@ -63,9 +63,12 @@ Configuration example:
 ```
 "cronjobs": {
     "reporting": "5 * * * *",
-    "remediation": "30 10 * * *"
+    "remediation": "30 10 * * *",
+    "python": "python3.6"
 }
 ```
+
+The optional **python** key defines the Python interpreter used by reporting and remediation cron jobs (and by the Slack bot service) on the reporting/remediation EC2. The default value is `python3.6`. Set it to `python3.9` if you enable any [Azure/GCP](multicloud_overview.html) issue type, because Azure/GCP SDKs require Python 3.8 or newer. The reporting/remediation EC2 has both `python3.6` and `python3.9` installed and reads this key on every (re)start.
 
 **Note**: the default frequency of identification Lambda function runs is `once an hour`. To decrease this frequency please use:
 * the CloudFormation parameter [IdentificationCheckRateExpression](deployment_cloudformation.html#313-identification-functionality);
@@ -195,6 +198,44 @@ Configuration example:
     "schedule": "0 9 * * 1",
     "bucket": "hammer-backup-bucket",
     "slack_channel": "#hammer-prod"
+},
+```
+
+### 1.5. Azure Settings
+
+**This step is required only if you intend to use Azure issue types** (check [multi-cloud overview](multicloud_overview.html)).
+
+The **azure** section of the `config.json` file defines the Azure subscriptions to check:
+* **accounts**: map of Azure subscription IDs to their names, used as account IDs/names by all Azure issue types. If the section is missing or **accounts** is empty, Azure support is disabled.
+
+Azure service principal credentials (`tenant_id`, `client_id`, `client_secret`) are **not** stored in `config.json`. They are loaded from the `azure` item of the [credentials](#13-reporting-setup-jiraslack) DynamoDB table. Check [prerequisites](prerequisites.html#5-put-azuregcp-credentials-into-dynamodb) for details.
+
+Configuration example:
+```
+"azure": {
+    "accounts": {
+        "00000000-0000-0000-0000-000000000000": "azure-prod",
+        "11111111-1111-1111-1111-111111111111": "azure-dev"
+    }
+},
+```
+
+### 1.6. GCP Settings
+
+**This step is required only if you intend to use GCP issue types** (check [multi-cloud overview](multicloud_overview.html)).
+
+The **gcp** section of the `config.json` file defines the GCP projects to check:
+* **accounts**: map of GCP project IDs to their names, used as account IDs/names by all GCP issue types. If the section is missing or **accounts** is empty, GCP support is disabled.
+
+The GCP service account JSON key is **not** stored in `config.json`. It is loaded from the `gcp` item of the [credentials](#13-reporting-setup-jiraslack) DynamoDB table. Check [prerequisites](prerequisites.html#5-put-azuregcp-credentials-into-dynamodb) for details.
+
+Configuration example:
+```
+"gcp": {
+    "accounts": {
+        "my-prod-project": "gcp-prod",
+        "my-dev-project": "gcp-dev"
+    }
 },
 ```
 
@@ -400,3 +441,165 @@ Parameters:
 * **reporting**: defines whether Dow Jones Hammer will report detected issues to JIRA/Slack. The default value is `false`;
 * **remediation**: defines whether Dow Jones Hammer will automatically remediate the detected issue. The default value is `false`;
 * **remediation_retention_period**: the amount of days that should pass between the detection of an issue and its automatic remediation by Dow Jones Hammer. The default value is `0`.
+
+### 2.14. Azure Storage Public Access
+
+This section describes how to detect Azure storage accounts that allow public blob access and contain publicly accessible (`Blob`/`Container` level) containers. Refer to [issue-specific playbook](playbook14_azure_storage_public_access.html) for further details.
+
+Edit the **azure_storage_public_access** section of the `config.json` file to configure the handling of this issue.
+
+Parameters:
+* **enabled**: enables/disables issue identification. The default value is `false`;
+* **ddb.table_name**: the name of the DynamoDB table where Dow Jones Hammer will write issue detection results. The default value is `hammer-azure-storage-public-access`;
+* **topic_name**: the name of the SNS topic used to trigger identification. The default value is `hammer-describe-azure-storage-public-access-lambda`;
+* **accounts**: *optional* comma-separated list of subscriptions to check and report for issue in square brackets. Use this key to override subscriptions from [azure.accounts](#15-azure-settings);
+* **ignore_accounts**: *optional* comma-separated list of subscriptions to ignore during check. Use this key to exclude subscriptions from [azure.accounts](#15-azure-settings);
+* **remediation_accounts**: *optional* comma-separated list of subscriptions to remediate issues in square brackets. Use this key to override subscriptions from [azure.accounts](#15-azure-settings);
+* **reporting**: defines whether Dow Jones Hammer will report detected issues to JIRA/Slack. The default value is `false`;
+* **remediation**: defines whether Dow Jones Hammer will automatically remediate the detected issue. The default value is `false`;
+* **remediation_retention_period**: the amount of days that should pass between the detection of an issue and its automatic remediation by Dow Jones Hammer. The default value is `0`.
+
+### 2.15. Azure NSG Unrestricted Access
+
+This section describes how to detect Azure network security groups with inbound `Allow` rules that open sensitive ports to the Internet (`*`, `Internet`, `0.0.0.0/0`, `::/0`). Refer to [issue-specific playbook](playbook15_azure_nsg_unrestricted_access.html) for further details.
+
+Edit the **azure_nsg_unrestricted_access** section of the `config.json` file to configure the handling of this issue.
+
+Parameters:
+* **enabled**: enables/disables issue identification. The default value is `false`;
+* **ddb.table_name**: the name of the DynamoDB table where Dow Jones Hammer will write issue detection results. The default value is `hammer-azure-nsg-unrestricted`;
+* **topic_name**: the name of the SNS topic used to trigger identification. The default value is `hammer-describe-azure-nsg-lambda`;
+* **accounts**: *optional* comma-separated list of subscriptions to check and report for issue in square brackets. Use this key to override subscriptions from [azure.accounts](#15-azure-settings);
+* **ignore_accounts**: *optional* comma-separated list of subscriptions to ignore during check. Use this key to exclude subscriptions from [azure.accounts](#15-azure-settings);
+* **remediation_accounts**: *optional* comma-separated list of subscriptions to remediate issues in square brackets. Use this key to override subscriptions from [azure.accounts](#15-azure-settings);
+* **restricted_ports**: a comma-separated list of ports in square brackets, which Dow Jones Hammer checks to be restricted (same semantics as **restricted_ports** of [Insecure Services](#22-insecure-services));
+* **reporting**: defines whether Dow Jones Hammer will report detected issues to JIRA/Slack. The default value is `false`;
+* **remediation**: defines whether Dow Jones Hammer will automatically remediate the detected issue. The default value is `false`;
+* **remediation_retention_period**: the amount of days that should pass between the detection of an issue and its automatic remediation by Dow Jones Hammer. The default value is `0`.
+
+### 2.16. Azure Unencrypted Disks
+
+This section describes how to detect Azure managed disks encrypted only with platform-managed keys. Refer to [issue-specific playbook](playbook16_azure_unencrypted_disks.html) for further details.
+
+Edit the **azure_disk_unencrypted** section of the `config.json` file to configure the handling of this issue.
+
+Parameters:
+* **enabled**: enables/disables issue identification. The default value is `false`;
+* **ddb.table_name**: the name of the DynamoDB table where Dow Jones Hammer will write issue detection results. The default value is `hammer-azure-disks-unencrypted`;
+* **topic_name**: the name of the SNS topic used to trigger identification. The default value is `hammer-describe-azure-unencrypted-disks-lambda`;
+* **accounts**: *optional* comma-separated list of subscriptions to check and report for issue in square brackets. Use this key to override subscriptions from [azure.accounts](#15-azure-settings);
+* **ignore_accounts**: *optional* comma-separated list of subscriptions to ignore during check. Use this key to exclude subscriptions from [azure.accounts](#15-azure-settings);
+* **require_customer_managed_key**: if `true`, only disks encrypted with a customer-managed key pass the check; if `false`, either a customer-managed key or Azure Disk Encryption passes the check. The default value is `false`;
+* **reporting**: defines whether Dow Jones Hammer will report detected issues to JIRA/Slack. The default value is `false`;
+* **remediation**: remediation is not supported for this issue type, keep the default value `false`.
+
+### 2.17. Azure Storage Keys Rotation
+
+This section describes how to detect Azure storage account access keys that have not been rotated within the set timeframe while shared key access is allowed. Refer to [issue-specific playbook](playbook17_azure_storage_keys_rotation.html) for further details.
+
+Edit the **azure_storage_keys_rotation** section of the `config.json` file to configure the handling of this issue.
+
+Parameters:
+* **enabled**: enables/disables issue identification. The default value is `false`;
+* **ddb.table_name**: the name of the DynamoDB table where Dow Jones Hammer will write issue detection results. The default value is `hammer-azure-storage-keys-rotation`;
+* **topic_name**: the name of the SNS topic used to trigger identification. The default value is `hammer-describe-azure-storage-keys-rotation-lambda`;
+* **accounts**: *optional* comma-separated list of subscriptions to check and report for issue in square brackets. Use this key to override subscriptions from [azure.accounts](#15-azure-settings);
+* **ignore_accounts**: *optional* comma-separated list of subscriptions to ignore during check. Use this key to exclude subscriptions from [azure.accounts](#15-azure-settings);
+* **remediation_accounts**: *optional* comma-separated list of subscriptions to remediate issues in square brackets. Use this key to override subscriptions from [azure.accounts](#15-azure-settings);
+* **rotation_criteria_days**: the threshold amount of days without key rotation that will trigger Dow Jones Hammer to raise an alert. Keys with unknown creation time are always reported;
+* **reporting**: defines whether Dow Jones Hammer will report detected issues to JIRA/Slack. The default value is `false`;
+* **remediation**: defines whether Dow Jones Hammer will automatically remediate the detected issue. The default value is `false`;
+* **remediation_retention_period**: the amount of days that should pass between the detection of an issue and its automatic remediation by Dow Jones Hammer. The default value is `0`.
+
+### 2.18. GCP Bucket Public Access
+
+This section describes how to detect GCP Cloud Storage buckets whose IAM policy (or legacy ACL) grants access to `allUsers`/`allAuthenticatedUsers`. Refer to [issue-specific playbook](playbook18_gcp_bucket_public_access.html) for further details.
+
+Edit the **gcp_bucket_public_access** section of the `config.json` file to configure the handling of this issue.
+
+Parameters:
+* **enabled**: enables/disables issue identification. The default value is `false`;
+* **ddb.table_name**: the name of the DynamoDB table where Dow Jones Hammer will write issue detection results. The default value is `hammer-gcp-bucket-public-access`;
+* **topic_name**: the name of the SNS topic used to trigger identification. The default value is `hammer-describe-gcp-bucket-public-access-lambda`;
+* **accounts**: *optional* comma-separated list of projects to check and report for issue in square brackets. Use this key to override projects from [gcp.accounts](#16-gcp-settings);
+* **ignore_accounts**: *optional* comma-separated list of projects to ignore during check. Use this key to exclude projects from [gcp.accounts](#16-gcp-settings);
+* **remediation_accounts**: *optional* comma-separated list of projects to remediate issues in square brackets. Use this key to override projects from [gcp.accounts](#16-gcp-settings);
+* **enforce_public_access_prevention**: if `true`, remediation also sets `public_access_prevention` of the bucket to `enforced`. The default value is `false`;
+* **reporting**: defines whether Dow Jones Hammer will report detected issues to JIRA/Slack. The default value is `false`;
+* **remediation**: defines whether Dow Jones Hammer will automatically remediate the detected issue. The default value is `false`;
+* **remediation_retention_period**: the amount of days that should pass between the detection of an issue and its automatic remediation by Dow Jones Hammer. The default value is `0`.
+
+### 2.19. GCP Firewall Unrestricted Access
+
+This section describes how to detect enabled GCP VPC ingress firewall rules that open sensitive ports to `0.0.0.0/0` or `::/0`. Refer to [issue-specific playbook](playbook19_gcp_firewall_unrestricted_access.html) for further details.
+
+Edit the **gcp_firewall_unrestricted_access** section of the `config.json` file to configure the handling of this issue.
+
+Parameters:
+* **enabled**: enables/disables issue identification. The default value is `false`;
+* **ddb.table_name**: the name of the DynamoDB table where Dow Jones Hammer will write issue detection results. The default value is `hammer-gcp-firewall-unrestricted`;
+* **topic_name**: the name of the SNS topic used to trigger identification. The default value is `hammer-describe-gcp-firewall-lambda`;
+* **accounts**: *optional* comma-separated list of projects to check and report for issue in square brackets. Use this key to override projects from [gcp.accounts](#16-gcp-settings);
+* **ignore_accounts**: *optional* comma-separated list of projects to ignore during check. Use this key to exclude projects from [gcp.accounts](#16-gcp-settings);
+* **remediation_accounts**: *optional* comma-separated list of projects to remediate issues in square brackets. Use this key to override projects from [gcp.accounts](#16-gcp-settings);
+* **restricted_ports**: a comma-separated list of ports in square brackets, which Dow Jones Hammer checks to be restricted (same semantics as **restricted_ports** of [Insecure Services](#22-insecure-services));
+* **reporting**: defines whether Dow Jones Hammer will report detected issues to JIRA/Slack. The default value is `false`;
+* **remediation**: defines whether Dow Jones Hammer will automatically remediate the detected issue. The default value is `false`;
+* **remediation_retention_period**: the amount of days that should pass between the detection of an issue and its automatic remediation by Dow Jones Hammer. The default value is `0`.
+
+### 2.20. GCP Unencrypted Disks
+
+This section describes how to detect GCP Compute Engine disks encrypted only with Google-managed keys (no Cloud KMS or customer-supplied key). Refer to [issue-specific playbook](playbook20_gcp_unencrypted_disks.html) for further details.
+
+Edit the **gcp_disk_unencrypted** section of the `config.json` file to configure the handling of this issue.
+
+Parameters:
+* **enabled**: enables/disables issue identification. The default value is `false`;
+* **ddb.table_name**: the name of the DynamoDB table where Dow Jones Hammer will write issue detection results. The default value is `hammer-gcp-disks-unencrypted`;
+* **topic_name**: the name of the SNS topic used to trigger identification. The default value is `hammer-describe-gcp-unencrypted-disks-lambda`;
+* **accounts**: *optional* comma-separated list of projects to check and report for issue in square brackets. Use this key to override projects from [gcp.accounts](#16-gcp-settings);
+* **ignore_accounts**: *optional* comma-separated list of projects to ignore during check. Use this key to exclude projects from [gcp.accounts](#16-gcp-settings);
+* **reporting**: defines whether Dow Jones Hammer will report detected issues to JIRA/Slack. The default value is `false`;
+* **remediation**: remediation is not supported for this issue type, keep the default value `false`.
+
+### 2.21. GCP Service Account Keys Rotation
+
+This section describes how to detect user-managed GCP service account keys that have not been rotated within the set timeframe. Refer to [issue-specific playbook](playbook21_gcp_sa_keys_rotation.html) for further details.
+
+Edit the **gcp_sa_keys_rotation** section of the `config.json` file to configure the handling of this issue.
+
+Parameters:
+* **enabled**: enables/disables issue identification. The default value is `false`;
+* **ddb.table_name**: the name of the DynamoDB table where Dow Jones Hammer will write issue detection results. The default value is `hammer-gcp-sa-keys-rotation`;
+* **topic_name**: the name of the SNS topic used to trigger identification. The default value is `hammer-describe-gcp-sa-keys-rotation-lambda`;
+* **accounts**: *optional* comma-separated list of projects to check and report for issue in square brackets. Use this key to override projects from [gcp.accounts](#16-gcp-settings);
+* **ignore_accounts**: *optional* comma-separated list of projects to ignore during check. Use this key to exclude projects from [gcp.accounts](#16-gcp-settings);
+* **remediation_accounts**: *optional* comma-separated list of projects to remediate issues in square brackets. Use this key to override projects from [gcp.accounts](#16-gcp-settings);
+* **rotation_criteria_days**: the threshold amount of days after key creation that will trigger Dow Jones Hammer to raise an alert;
+* **reporting**: defines whether Dow Jones Hammer will report detected issues to JIRA/Slack. The default value is `false`;
+* **remediation**: defines whether Dow Jones Hammer will automatically remediate the detected issue. The default value is `false`;
+* **remediation_retention_period**: the amount of days that should pass between the detection of an issue and its automatic remediation by Dow Jones Hammer. The default value is `0`.
+
+### 2.22. Azure/GCP Configuration Example
+
+```
+"azure_nsg_unrestricted_access": {
+    "enabled": true,
+    "ddb.table_name": "hammer-azure-nsg-unrestricted",
+    "topic_name": "hammer-describe-azure-nsg-lambda",
+    "restricted_ports": [21, 22, 23, 3389, 1433, 3306, 5432, 27017],
+    "ignore_accounts": ["11111111-1111-1111-1111-111111111111"],
+    "reporting": true,
+    "remediation": false,
+    "remediation_retention_period": 21
+},
+"gcp_sa_keys_rotation": {
+    "enabled": true,
+    "ddb.table_name": "hammer-gcp-sa-keys-rotation",
+    "topic_name": "hammer-describe-gcp-sa-keys-rotation-lambda",
+    "rotation_criteria_days": 90,
+    "reporting": true,
+    "remediation": false,
+    "remediation_retention_period": 0
+}
+```

@@ -238,6 +238,46 @@ class PublicAMIIssue(Issue):
         super().__init__(*args)
 
 
+class AzureStoragePublicAccessIssue(Issue):
+    def __init__(self, *args):
+        super().__init__(*args)
+
+
+class AzureNSGIssue(Issue):
+    def __init__(self, *args):
+        super().__init__(*args)
+
+
+class AzureUnencryptedDiskIssue(Issue):
+    def __init__(self, *args):
+        super().__init__(*args)
+
+
+class AzureStorageKeyRotationIssue(Issue):
+    def __init__(self, *args):
+        super().__init__(*args)
+
+
+class GCPBucketPublicAccessIssue(Issue):
+    def __init__(self, *args):
+        super().__init__(*args)
+
+
+class GCPFirewallIssue(Issue):
+    def __init__(self, *args):
+        super().__init__(*args)
+
+
+class GCPUnencryptedDiskIssue(Issue):
+    def __init__(self, *args):
+        super().__init__(*args)
+
+
+class GCPServiceAccountKeyIssue(Issue):
+    def __init__(self, *args):
+        super().__init__(*args)
+
+
 class Operations(object):
     @staticmethod
     def find(ddb_table, issue):

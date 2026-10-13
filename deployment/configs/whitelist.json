@@ -45,5 +45,29 @@
     "s3_encryption": {
 	},
     "rds_encryption": {
+	},
+	"azure_storage_public_access": {
+		"__comment__": "Detects Azure storage accounts with public blob containers. Key - subscription id, values - storage account names."
+	},
+	"azure_nsg_unrestricted_access": {
+		"__comment__": "Detects Azure network security groups with world-wide open ports from the list. Key - subscription id, values - NSG resource ids (lower-case)."
+	},
+	"azure_disk_unencrypted": {
+		"__comment__": "Detects Azure managed disks encrypted only with platform-managed keys. Key - subscription id, values - disk resource ids (lower-case)."
+	},
+	"azure_storage_keys_rotation": {
+		"__comment__": "Detects Azure storage accounts with access keys not rotated for a definite number of days. Key - subscription id, values - storage account names."
+	},
+	"gcp_bucket_public_access": {
+		"__comment__": "Detects GCP buckets accessible by allUsers/allAuthenticatedUsers. Key - project id, values - bucket names."
+	},
+	"gcp_firewall_unrestricted_access": {
+		"__comment__": "Detects GCP VPC firewall rules with world-wide open ports from the list. Key - project id, values - firewall rule names."
+	},
+	"gcp_disk_unencrypted": {
+		"__comment__": "Detects GCP disks encrypted only with Google-managed keys. Key - project id, values - '{zone}/{disk name}'."
+	},
+	"gcp_sa_keys_rotation": {
+		"__comment__": "Detects GCP user-managed service account keys created earlier than definite number of days. Key - project id, values - key resource names."
 	}
 }
